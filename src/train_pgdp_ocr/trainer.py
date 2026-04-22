@@ -3,7 +3,6 @@ import hashlib
 import logging
 import multiprocessing
 import os
-import sys
 import time
 from pathlib import Path
 
@@ -191,7 +190,7 @@ def evaluate(model, device, val_loader, batch_transforms, val_metric, amp=False,
             out = model(images, targets, return_preds=True)
         # Compute metric
         if len(out["preds"]):
-            words, _ = zip(*out["preds"])
+            words, _ = zip(*out["preds"], strict=False)
         else:
             words = []
         val_metric.update(targets, words)
@@ -277,11 +276,13 @@ def main(args):
                 download=True,
                 recognition_task=True,
                 use_polygons=True,
-                img_transforms=Compose([
-                    T.Resize((args.input_size, 4 * args.input_size), preserve_aspect_ratio=True),
-                    # Augmentations
-                    T.RandomApply(T.ColorInversion(), 0.1),
-                ]),
+                img_transforms=Compose(
+                    [
+                        T.Resize((args.input_size, 4 * args.input_size), preserve_aspect_ratio=True),
+                        # Augmentations
+                        T.RandomApply(T.ColorInversion(), 0.1),
+                    ]
+                ),
             )
             if len(val_datasets) > 1:
                 for dataset_name in val_datasets[1:]:
@@ -301,11 +302,13 @@ def main(args):
                 max_chars=args.max_chars,
                 num_samples=args.val_samples * len(vocab),
                 font_family=fonts,
-                img_transforms=Compose([
-                    T.Resize((args.input_size, 4 * args.input_size), preserve_aspect_ratio=True),
-                    # Ensure we have a 90% split of white-background images
-                    T.RandomApply(T.ColorInversion(), 0.9),
-                ]),
+                img_transforms=Compose(
+                    [
+                        T.Resize((args.input_size, 4 * args.input_size), preserve_aspect_ratio=True),
+                        # Ensure we have a 90% split of white-background images
+                        T.RandomApply(T.ColorInversion(), 0.9),
+                    ]
+                ),
             )
 
         val_loader = DataLoader(
@@ -372,17 +375,19 @@ def main(args):
         train_set = RecognitionDataset(
             parts[0].joinpath("images"),
             parts[0].joinpath("labels.json"),
-            img_transforms=Compose([
-                T.Resize((args.input_size, 4 * args.input_size), preserve_aspect_ratio=True),
-                # Augmentations
-                T.RandomApply(T.ColorInversion(), 0.1),
-                RandomGrayscale(p=0.1),
-                RandomPhotometricDistort(p=0.1),
-                T.RandomApply(T.RandomShadow(), p=0.4),
-                T.RandomApply(T.GaussianNoise(mean=0, std=0.1), 0.1),
-                T.RandomApply(T.GaussianBlur(sigma=(0.5, 1.5)), 0.3),
-                RandomPerspective(distortion_scale=0.2, p=0.3),
-            ]),
+            img_transforms=Compose(
+                [
+                    T.Resize((args.input_size, 4 * args.input_size), preserve_aspect_ratio=True),
+                    # Augmentations
+                    T.RandomApply(T.ColorInversion(), 0.1),
+                    RandomGrayscale(p=0.1),
+                    RandomPhotometricDistort(p=0.1),
+                    T.RandomApply(T.RandomShadow(), p=0.4),
+                    T.RandomApply(T.GaussianNoise(mean=0, std=0.1), 0.1),
+                    T.RandomApply(T.GaussianBlur(sigma=(0.5, 1.5)), 0.3),
+                    RandomPerspective(distortion_scale=0.2, p=0.3),
+                ]
+            ),
         )
         if len(parts) > 1:
             for subfolder in parts[1:]:
@@ -398,11 +403,13 @@ def main(args):
             download=True,
             recognition_task=True,
             use_polygons=True,
-            img_transforms=Compose([
-                T.Resize((args.input_size, 4 * args.input_size), preserve_aspect_ratio=True),
-                # Augmentations
-                T.RandomApply(T.ColorInversion(), 0.1),
-            ]),
+            img_transforms=Compose(
+                [
+                    T.Resize((args.input_size, 4 * args.input_size), preserve_aspect_ratio=True),
+                    # Augmentations
+                    T.RandomApply(T.ColorInversion(), 0.1),
+                ]
+            ),
         )
         if len(train_datasets) > 1:
             for dataset_name in train_datasets[1:]:
@@ -422,17 +429,19 @@ def main(args):
             max_chars=args.max_chars,
             num_samples=args.train_samples * len(vocab),
             font_family=fonts,
-            img_transforms=Compose([
-                T.Resize((args.input_size, 4 * args.input_size), preserve_aspect_ratio=True),
-                # Ensure we have a 90% split of white-background images
-                T.RandomApply(T.ColorInversion(), 0.9),
-                RandomGrayscale(p=0.1),
-                RandomPhotometricDistort(p=0.1),
-                T.RandomApply(T.RandomShadow(), p=0.4),
-                T.RandomApply(T.GaussianNoise(mean=0, std=0.1), 0.1),
-                T.RandomApply(T.GaussianBlur(sigma=(0.5, 1.5)), 0.3),
-                RandomPerspective(distortion_scale=0.2, p=0.3),
-            ]),
+            img_transforms=Compose(
+                [
+                    T.Resize((args.input_size, 4 * args.input_size), preserve_aspect_ratio=True),
+                    # Ensure we have a 90% split of white-background images
+                    T.RandomApply(T.ColorInversion(), 0.9),
+                    RandomGrayscale(p=0.1),
+                    RandomPhotometricDistort(p=0.1),
+                    T.RandomApply(T.RandomShadow(), p=0.4),
+                    T.RandomApply(T.GaussianNoise(mean=0, std=0.1), 0.1),
+                    T.RandomApply(T.GaussianBlur(sigma=(0.5, 1.5)), 0.3),
+                    RandomPerspective(distortion_scale=0.2, p=0.3),
+                ]
+            ),
         )
 
     if distributed:
@@ -526,11 +535,13 @@ def main(args):
         )
 
         def wandb_log_at_step(train_loss=None, val_loss=None, lr=None):
-            wandb.log({
-                **({"train_loss_step": train_loss} if train_loss is not None else {}),
-                **({"val_loss_step": val_loss} if val_loss is not None else {}),
-                **({"step_lr": lr} if lr is not None else {}),
-            })
+            wandb.log(
+                {
+                    **({"train_loss_step": train_loss} if train_loss is not None else {}),
+                    **({"val_loss_step": val_loss} if val_loss is not None else {}),
+                    **({"step_lr": lr} if lr is not None else {}),
+                }
+            )
 
     # ClearML
     if rank == 0 and args.clearml:
@@ -611,13 +622,15 @@ def main(args):
             )
             # W&B
             if args.wb:
-                wandb.log({
-                    "train_loss": train_loss,
-                    "val_loss": val_loss,
-                    "learning_rate": actual_lr,
-                    "exact_match": exact_match,
-                    "partial_match": partial_match,
-                })
+                wandb.log(
+                    {
+                        "train_loss": train_loss,
+                        "val_loss": val_loss,
+                        "learning_rate": actual_lr,
+                        "exact_match": exact_match,
+                        "partial_match": partial_match,
+                    }
+                )
 
             # ClearML
             if args.clearml:
@@ -766,13 +779,13 @@ def train_from_config(
     device: int = 0,
 ) -> None:
     """Run training with simplified configuration, suitable for UI calls.
-    
+
     This is the primary entry point for programmatic training calls (e.g., from the UI).
     It converts simple parameters into an args object and calls main().
-    
+
     Args:
         train_path: Path to training data folder
-        val_path: Path to validation data folder  
+        val_path: Path to validation data folder
         arch: Model architecture name
         epochs: Number of training epochs
         batch_size: Training batch size
@@ -791,7 +804,7 @@ def train_from_config(
         device: GPU device index (-1 for CPU)
     """
     import argparse
-    
+
     # Create a namespace object that mimics argparse args
     args = argparse.Namespace(
         arch=arch,
@@ -831,7 +844,7 @@ def train_from_config(
         pretrained=False,
         find_lr=False,
     )
-    
+
     main(args)
 
 

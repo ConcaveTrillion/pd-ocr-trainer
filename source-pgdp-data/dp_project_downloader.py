@@ -12,8 +12,8 @@ Requires requests:
     pip install requests
 """
 
-import logging
 import json
+import logging
 import os
 
 import requests
@@ -68,12 +68,10 @@ class DPDownloader:
             for page in project_pages:
                 logging.debug(f"Fetching page text for {image_name}")
                 image_name = page["image"]
-                page = self.get(
-                    f"projects/{projectid}/pages/{image_name}/pagerounds/{roundid}"
-                )
+                page = self.get(f"projects/{projectid}/pages/{image_name}/pagerounds/{roundid}")
                 texts[image_name] = page["text"]
 
-            with open(filename, "wt") as fileobj:
+            with open(filename, "w") as fileobj:
                 json.dump(texts, fileobj, indent=2)
 
 

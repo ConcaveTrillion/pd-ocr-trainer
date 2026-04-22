@@ -3,12 +3,10 @@
 import json
 import threading
 from pathlib import Path
-from typing import Optional
 
 import torch
 from nicegui import ui
 
-from train_pgdp_ocr import __version__
 from train_pgdp_ocr.trainer import train_from_config
 
 # Get the project root (parent of src directory)
@@ -38,15 +36,15 @@ class DatasetManager:
                 data = json.load(f)
             filename = filepath.name
             self.loaded_files[filename] = data
-            
+
             # Count pages
             pages = data.get("pages", [])
             if filename not in self.assignments:
-                self.assignments[filename] = {i: None for i in range(len(pages))}
-            
+                self.assignments[filename] = dict.fromkeys(range(len(pages)))
+
             return data
         except Exception as e:
-            raise ValueError(f"Failed to load {filepath.name}: {e}")
+            raise ValueError(f"Failed to load {filepath.name}: {e}") from e
 
     def get_available_files(self) -> list[str]:
         """Get list of available JSON files in matched-ocr."""
@@ -67,13 +65,9 @@ class DatasetManager:
 
     def update_stats(self):
         """Update total and assigned page counts."""
-        self.total_pages = sum(
-            len(self.loaded_files.get(f, {}).get("pages", []))
-            for f in self.loaded_files
-        )
+        self.total_pages = sum(len(self.loaded_files.get(f, {}).get("pages", [])) for f in self.loaded_files)
         self.assigned_pages = sum(
-            1 for file_assigns in self.assignments.values()
-            if any(v is not None for v in file_assigns.values())
+            1 for file_assigns in self.assignments.values() if any(v is not None for v in file_assigns.values())
         )
 
     def export_datasets(self) -> dict:
@@ -128,7 +122,7 @@ class TrainingConfig:
 # Global state
 dataset_manager = DatasetManager()
 training_config = TrainingConfig()
-training_thread: Optional[threading.Thread] = None
+training_thread: threading.Thread | None = None
 training_cancelled = False
 
 
@@ -153,9 +147,7 @@ def create_ui():
                         filepath = MATCHED_OCR_DIR / filename
                         dataset_manager.load_json_file(filepath)
                         page_count = dataset_manager.get_page_count(filename)
-                        files_label.set_text(
-                            f"✓ Loaded: {filename} ({page_count} pages)"
-                        )
+                        files_label.set_text(f"✓ Loaded: {filename} ({page_count} pages)")
                         refresh_page_grid()
                         update_stats()
                     except Exception as e:
@@ -202,23 +194,20 @@ def create_ui():
                                     ),
                                 ).props("size=sm dense").classes("w-24")
 
-            refresh_page_grid_func = refresh_page_grid
-
             # Stats
             stats_label = ui.label("No data loaded").classes("text-sm text-gray-600 mt-4")
 
             def update_stats():
                 dataset_manager.update_stats()
                 stats_label.set_text(
-                    f"📊 Total pages: {dataset_manager.total_pages} | "
-                    f"Assigned: {dataset_manager.assigned_pages}"
+                    f"📊 Total pages: {dataset_manager.total_pages} | Assigned: {dataset_manager.assigned_pages}"
                 )
 
         # ==================== TRAINING CONFIG SECTION ====================
         with ui.card().classes("flex-1"):
             ui.label("⚙️ Training Configuration").classes("text-lg font-bold")
 
-            with ui.tabs().classes("w-full") as tabs:
+            with ui.tabs().classes("w-full"):
                 with ui.tab_panel("Basic"):
                     ui.label("Model & Data").classes("font-semibold text-sm")
 
@@ -273,9 +262,7 @@ def create_ui():
                         max=0.1,
                         step=0.0001,
                         format="%.5f",
-                        on_change=lambda v: setattr(
-                            training_config, "learning_rate", v.value
-                        ),
+                        on_change=lambda v: setattr(training_config, "learning_rate", v.value),
                     ).classes("w-full")
 
                     ui.number(
@@ -332,9 +319,7 @@ def create_ui():
                         value=training_config.early_stop_epochs,
                         min=1,
                         max=20,
-                        on_change=lambda v: setattr(
-                            training_config, "early_stop_epochs", int(v.value)
-                        ),
+                        on_change=lambda v: setattr(training_config, "early_stop_epochs", int(v.value)),
                     ).classes("w-full")
 
     # ==================== TRAINING CONTROL SECTION ====================
@@ -400,14 +385,14 @@ def create_ui():
                             output_dir=str(PROJECT_ROOT),
                             device=training_config.device,
                         )
-                        
+
                         if not training_cancelled:
                             status_label.set_text("✅ Training completed!")
                             ui.notify("Training finished successfully!", type="positive")
                             output_area.value += "\n\n✅ Training completed successfully!"
                         else:
                             status_label.set_text("⏹️ Training stopped by user")
-                            
+
                     except Exception as e:
                         status_label.set_text(f"❌ Error: {e}")
                         output_area.value += f"\n\nError: {e}\n"
