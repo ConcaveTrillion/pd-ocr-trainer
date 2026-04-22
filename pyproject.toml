@@ -1,0 +1,118 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "train-pgdp-ocr"
+version = "0.1.0"
+description = "OCR training suite for PGDP documents with NiceGUI interface"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [
+    {name = "ConcaveTrillion", email = "ConcaveTrillion@gmail.com"}
+]
+license = {text = "Unlicense"}
+keywords = ["OCR", "training", "deep-learning", "pytorch", "text-recognition"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: The Unlicense (Unlicense)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "torch>=2.7.0",
+    "torchvision>=0.22.0",
+    "torchaudio>=2.7.0",
+    "python-doctr>=0.11.1a0",
+    "nicegui>=1.4.0",
+    "matplotlib>=3.10.1",
+    "pd-book-tools",
+]
+
+[project.optional-dependencies]
+jupyter = [
+    "jupyterlab>=4.0",
+    "ipykernel",
+    "ipywidgets",
+]
+quality = [
+    "ruff>=0.15.11",
+    "pre-commit>=4.2.0",
+    "isort>=6.0",
+]
+test = [
+    "pytest>=8.3",
+    "pytest-xdist>=3.0",
+]
+
+[dependency-groups]
+test = [
+    "pytest>=8.3",
+    "pytest-xdist>=3.0",
+]
+lint = [
+    "ruff>=0.15.11",
+    "pre-commit>=4.2.0",
+    "isort>=6.0",
+]
+jupyter = [
+    "jupyterlab>=4.0",
+    "ipykernel",
+    "ipywidgets",
+]
+dev = [
+    {include-group = "test"},
+    {include-group = "lint"},
+    {include-group = "jupyter"},
+]
+all-dev = [
+    {include-group = "dev"},
+]
+
+[project.scripts]
+train-pgdp-ocr = "train_pgdp_ocr.trainer:main"
+train-pgdp-ocr-ui = "train_pgdp_ocr.ui:main"
+
+[tool.uv.sources]
+pd-book-tools = { git = "https://github.com/ConcaveTrillion/pd-book-tools.git" }
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --strict-markers"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["train_pgdp_ocr"]
+
+[tool.ruff.format]
+line-length = 120
