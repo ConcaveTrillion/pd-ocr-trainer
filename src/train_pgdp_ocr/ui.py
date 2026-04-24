@@ -1,9 +1,14 @@
 """NiceGUI training interface for OCR configuration and dataset management."""
 
 import json
+import os
+import shutil
 import threading
+from collections import defaultdict
+from hashlib import sha256
 from pathlib import Path
 
+import cv2
 import torch
 from nicegui import ui
 
@@ -26,8 +31,175 @@ class DatasetManager:
     def __init__(self):
         self.loaded_files = {}  # {filename: json_data}
         self.assignments = {}  # {filename: {page_index: 'train'|'val'|None}}
+        self.existing_page_keys = set()
+        self.page_diff_flags = {}  # {(filename, page_index): bool}
+        self.existing_detection_by_page = {}
+        self.existing_recognition_by_page = defaultdict(list)
         self.total_pages = 0
         self.assigned_pages = 0
+        self.refresh_existing_page_keys()
+
+    @staticmethod
+    def page_instance_key(filename: str, page_index: int) -> str:
+        """Build a stable key for a matched-ocr page."""
+        return f"{Path(filename).stem}_{page_index}"
+
+    @staticmethod
+    def page_key_from_image_stem(image_stem: str) -> str:
+        """Extract the page key used by dataset images.
+
+        Recognition crops use <page_key>_<x1>_<x2>_<y1>_<y2> naming,
+        while detection images are stored directly as <page_key>.
+        """
+        parts = image_stem.split("_")
+        if len(parts) >= 6 and all(part.isdigit() for part in parts[-4:]):
+            return "_".join(parts[:-4])
+        return image_stem
+
+    def refresh_existing_page_keys(self):
+        """Read current train/val datasets and index all existing page keys."""
+        indexed_keys = set()
+        detection_by_page = {}
+        recognition_by_page = defaultdict(list)
+        dataset_roots = [ML_TRAINING_DIR, ML_VALIDATION_DIR]
+        tasks = ["detection", "recognition"]
+
+        for dataset_root in dataset_roots:
+            for task in tasks:
+                images_dir = dataset_root / task / "images"
+                if not images_dir.exists():
+                    continue
+
+                for image_path in images_dir.glob("*.*"):
+                    page_key = self.page_key_from_image_stem(image_path.stem)
+                    indexed_keys.add(page_key)
+
+                labels_path = dataset_root / task / "labels.json"
+                if not labels_path.exists():
+                    continue
+
+                try:
+                    with open(labels_path) as f:
+                        labels_data = json.load(f)
+                except Exception:
+                    continue
+
+                if task == "detection":
+                    for image_name, meta in labels_data.items():
+                        page_key = Path(image_name).stem
+                        indexed_keys.add(page_key)
+                        if page_key not in detection_by_page:
+                            detection_by_page[page_key] = meta
+                else:
+                    for crop_name, text in labels_data.items():
+                        page_key = self.page_key_from_image_stem(Path(crop_name).stem)
+                        indexed_keys.add(page_key)
+                        recognition_by_page[page_key].append(str(text))
+
+        self.existing_page_keys = indexed_keys
+        self.existing_detection_by_page = detection_by_page
+        self.existing_recognition_by_page = recognition_by_page
+
+    def is_existing_page(self, filename: str, page_index: int) -> bool:
+        """Check whether a matched-ocr page already exists in train/val datasets."""
+        return self.page_instance_key(filename, page_index) in self.existing_page_keys
+
+    @staticmethod
+    def _hash_values(values: list[str]) -> str:
+        return sha256("\n".join(sorted(values)).encode("utf-8")).hexdigest()
+
+    def _extract_words(self, node: dict | list | None, words: list[dict]):
+        """Recursively collect word nodes from a page tree."""
+        if isinstance(node, list):
+            for child in node:
+                self._extract_words(child, words)
+            return
+        if not isinstance(node, dict):
+            return
+
+        if node.get("type") == "Word":
+            words.append(node)
+            return
+
+        if "items" in node:
+            self._extract_words(node.get("items"), words)
+
+    @staticmethod
+    def _bbox_to_pixels(word: dict, width: int, height: int) -> str | None:
+        bbox = word.get("bounding_box", {})
+        top_left = bbox.get("top_left") if isinstance(bbox, dict) else None
+        bottom_right = bbox.get("bottom_right") if isinstance(bbox, dict) else None
+        if not (isinstance(top_left, dict) and isinstance(bottom_right, dict)):
+            return None
+
+        try:
+            x1 = int(round(float(top_left["x"]) * width))
+            y1 = int(round(float(top_left["y"]) * height))
+            x2 = int(round(float(bottom_right["x"]) * width))
+            y2 = int(round(float(bottom_right["y"]) * height))
+        except Exception:
+            return None
+
+        return f"{x1}_{x2}_{y1}_{y2}"
+
+    def is_page_different(self, filename: str, page_index: int, page: dict) -> bool:
+        """Return True when a matched page exists already but content appears different."""
+        page_key = self.page_instance_key(filename, page_index)
+        if page_key not in self.existing_page_keys:
+            return False
+
+        existing_detection = self.existing_detection_by_page.get(page_key, {})
+        existing_texts = self.existing_recognition_by_page.get(page_key, [])
+
+        width = page.get("width")
+        height = page.get("height")
+        words = []
+        self._extract_words(page.get("items", []), words)
+
+        matched_texts = []
+        matched_boxes = []
+        for word in words:
+            token = word.get("ground_truth_text") or word.get("text") or ""
+            token = str(token).strip()
+            if token:
+                matched_texts.append(token)
+            if isinstance(width, int) and isinstance(height, int):
+                box_key = self._bbox_to_pixels(word, width, height)
+                if box_key:
+                    matched_boxes.append(box_key)
+
+        existing_dims = existing_detection.get("img_dimensions") if isinstance(existing_detection, dict) else None
+        if (
+            isinstance(existing_dims, list)
+            and len(existing_dims) == 2
+            and isinstance(width, int)
+            and isinstance(height, int)
+        ):
+            if [width, height] != existing_dims:
+                return True
+
+        existing_polygons = existing_detection.get("polygons") if isinstance(existing_detection, dict) else None
+        if isinstance(existing_polygons, list):
+            existing_polygon_boxes = []
+            for polygon in existing_polygons:
+                if not isinstance(polygon, list) or not polygon:
+                    continue
+                try:
+                    xs = [int(point[0]) for point in polygon if isinstance(point, list) and len(point) >= 2]
+                    ys = [int(point[1]) for point in polygon if isinstance(point, list) and len(point) >= 2]
+                except Exception:
+                    continue
+                if xs and ys:
+                    existing_polygon_boxes.append(f"{min(xs)}_{max(xs)}_{min(ys)}_{max(ys)}")
+
+            if matched_boxes and self._hash_values(matched_boxes) != self._hash_values(existing_polygon_boxes):
+                return True
+
+        if existing_texts:
+            if self._hash_values(matched_texts) != self._hash_values(existing_texts):
+                return True
+
+        return False
 
     def load_json_file(self, filepath: Path) -> dict:
         """Load a JSON file from matched-ocr."""
@@ -39,36 +211,380 @@ class DatasetManager:
 
             # Count pages
             pages = data.get("pages", [])
-            if filename not in self.assignments:
-                self.assignments[filename] = dict.fromkeys(range(len(pages)))
+            self.page_diff_flags = {k: v for k, v in self.page_diff_flags.items() if k[0] != filename}
+
+            assignable_page_indices = self.get_assignable_page_indices(filename, pages)
+            self.assignments[filename] = dict.fromkeys(assignable_page_indices)
 
             return data
         except Exception as e:
             raise ValueError(f"Failed to load {filepath.name}: {e}") from e
 
+    def get_assignable_page_indices(self, filename: str, pages: list[dict]) -> list[int]:
+        """Return page indices that are new or overlap with meaningful differences."""
+        assignable = []
+        for idx, page in enumerate(pages):
+            if not self.is_existing_page(filename, idx):
+                assignable.append(idx)
+                self.page_diff_flags[(filename, idx)] = False
+                continue
+
+            is_different = self.is_page_different(filename, idx, page)
+            self.page_diff_flags[(filename, idx)] = is_different
+            if is_different:
+                assignable.append(idx)
+
+        return assignable
+
+    def is_flagged_different(self, filename: str, page_index: int) -> bool:
+        """Whether the page is an overlap that differs from existing datasets."""
+        return self.page_diff_flags.get((filename, page_index), False)
+
+    @staticmethod
+    def _load_json_map(path: Path) -> dict:
+        if not path.exists():
+            return {}
+        try:
+            with open(path) as f:
+                data = json.load(f)
+            return data if isinstance(data, dict) else {}
+        except Exception:
+            return {}
+
+    @staticmethod
+    def _write_json_map(path: Path, data: dict):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w") as f:
+            json.dump(data, f, indent=2)
+
+    @staticmethod
+    def _file_sha256(path: Path) -> str:
+        digest = sha256()
+        with open(path, "rb") as f:
+            for chunk in iter(lambda: f.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+
+    @staticmethod
+    def project_from_page_key(page_key: str) -> str:
+        parts = page_key.split("_")
+        if len(parts) >= 3 and parts[-1].isdigit() and parts[-2].isdigit():
+            return "_".join(parts[:-2])
+        if "_" in page_key:
+            return page_key.rsplit("_", 1)[0]
+        return page_key
+
+    def _page_words_with_boxes(self, page: dict) -> list[dict]:
+        words = []
+        self._extract_words(page.get("items", []), words)
+        width = page.get("width")
+        height = page.get("height")
+        if not isinstance(width, int) or not isinstance(height, int):
+            return []
+
+        out = []
+        for word in words:
+            text = str(word.get("ground_truth_text") or word.get("text") or "").strip()
+            if not text:
+                continue
+            box = self._bbox_to_pixels(word, width, height)
+            if not box:
+                continue
+            x1s, x2s, y1s, y2s = box.split("_")
+            x1, x2, y1, y2 = int(x1s), int(x2s), int(y1s), int(y2s)
+            if x2 <= x1 or y2 <= y1:
+                continue
+            out.append({"text": text, "box": [x1, x2, y1, y2]})
+        return out
+
+    def _source_image_path(self, filename: str, data: dict) -> Path:
+        source_path = data.get("source_path")
+        candidates = []
+        if isinstance(source_path, str) and source_path:
+            source_obj = Path(source_path)
+            candidates.append(PROJECT_ROOT / source_obj)
+            candidates.append(PROJECT_ROOT / source_obj.name)
+            candidates.append(MATCHED_OCR_DIR / source_obj.name)
+        candidates.append(MATCHED_OCR_DIR / f"{Path(filename).stem}.png")
+
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate
+        raise FileNotFoundError(f"Source image not found for {filename}")
+
+    @staticmethod
+    def _remove_page_prefixed_entries(data: dict, page_key: str):
+        prefix = f"{page_key}_"
+        to_delete = [key for key in data if key.startswith(prefix)]
+        for key in to_delete:
+            data.pop(key, None)
+
+    @staticmethod
+    def _remove_page_prefixed_images(images_dir: Path, page_key: str):
+        if not images_dir.exists():
+            return
+        pattern = f"{page_key}_*.png"
+        for image_path in images_dir.glob(pattern):
+            image_path.unlink(missing_ok=True)
+
+    def _existing_pages_for_split(self, split: str) -> dict:
+        split_root = ML_TRAINING_DIR if split == "train" else ML_VALIDATION_DIR
+        detection_labels = self._load_json_map(split_root / "detection" / "labels.json")
+        recognition_labels = self._load_json_map(split_root / "recognition" / "labels.json")
+
+        page_keys = set()
+        for image_name in detection_labels:
+            page_keys.add(Path(image_name).stem)
+        for crop_name in recognition_labels:
+            page_keys.add(self.page_key_from_image_stem(Path(crop_name).stem))
+
+        projects = defaultdict(list)
+        for page_key in sorted(page_keys):
+            project = self.project_from_page_key(page_key)
+            projects[project].append(f"{page_key} [existing]")
+
+        mirrored = {project: list(labels) for project, labels in projects.items()}
+        return {"detection": mirrored, "recognition": {k: list(v) for k, v in mirrored.items()}}
+
+    @staticmethod
+    def _merge_projects(primary: dict, secondary: dict) -> dict:
+        merged = {}
+        all_projects = set(primary.keys()) | set(secondary.keys())
+        for project in sorted(all_projects):
+            values = list(primary.get(project, [])) + list(secondary.get(project, []))
+            merged[project] = sorted(set(values))
+        return merged
+
+    def get_combined_split_task_pages(self) -> dict:
+        assigned = self.get_split_task_pages()
+        existing = {
+            "train": self._existing_pages_for_split("train"),
+            "val": self._existing_pages_for_split("val"),
+        }
+
+        combined = {
+            "unassigned": assigned["unassigned"],
+            "train": {"detection": {}, "recognition": {}},
+            "val": {"detection": {}, "recognition": {}},
+        }
+
+        for split in ("train", "val"):
+            for task in ("detection", "recognition"):
+                combined[split][task] = self._merge_projects(existing[split][task], assigned[split][task])
+
+        return combined
+
+    def save_assignments(self) -> dict:
+        """Persist assignments into combined labels and prune saved pages from matched-ocr."""
+        pending = []
+        by_file = defaultdict(list)
+
+        for filename, file_assignments in self.assignments.items():
+            data = self.loaded_files.get(filename)
+            if not data:
+                continue
+            pages = data.get("pages", [])
+            for page_index, split in file_assignments.items():
+                if split not in {"train", "val"}:
+                    continue
+                if page_index >= len(pages):
+                    continue
+                pending.append((filename, page_index, split))
+                by_file[filename].append(page_index)
+
+        if not pending:
+            return {"saved_pages": 0, "removed_files": 0}
+
+        split_data = {
+            "train": {
+                "root": ML_TRAINING_DIR,
+                "detection_labels": self._load_json_map(ML_TRAINING_DIR / "detection" / "labels.json"),
+                "recognition_labels": self._load_json_map(ML_TRAINING_DIR / "recognition" / "labels.json"),
+            },
+            "val": {
+                "root": ML_VALIDATION_DIR,
+                "detection_labels": self._load_json_map(ML_VALIDATION_DIR / "detection" / "labels.json"),
+                "recognition_labels": self._load_json_map(ML_VALIDATION_DIR / "recognition" / "labels.json"),
+            },
+        }
+
+        for split_cfg in split_data.values():
+            (split_cfg["root"] / "detection" / "images").mkdir(parents=True, exist_ok=True)
+            (split_cfg["root"] / "recognition" / "images").mkdir(parents=True, exist_ok=True)
+
+        for filename, page_index, split in pending:
+            data = self.loaded_files[filename]
+            page = data["pages"][page_index]
+            page_key = self.page_instance_key(filename, page_index)
+            source_image = self._source_image_path(filename, data)
+
+            # Replace semantics by page key: remove stale entries from both train/val before adding.
+            for existing_split_cfg in split_data.values():
+                det_name = f"{page_key}.png"
+                existing_split_cfg["detection_labels"].pop(det_name, None)
+                self._remove_page_prefixed_entries(existing_split_cfg["recognition_labels"], page_key)
+
+                det_existing_path = existing_split_cfg["root"] / "detection" / "images" / det_name
+                det_existing_path.unlink(missing_ok=True)
+                self._remove_page_prefixed_images(existing_split_cfg["root"] / "recognition" / "images", page_key)
+
+            split_cfg = split_data[split]
+            det_images_dir = split_cfg["root"] / "detection" / "images"
+            rec_images_dir = split_cfg["root"] / "recognition" / "images"
+
+            det_filename = f"{page_key}.png"
+            det_target = det_images_dir / det_filename
+            shutil.copy2(source_image, det_target)
+
+            words = self._page_words_with_boxes(page)
+            polygons = []
+            src_img = cv2.imread(str(source_image), cv2.IMREAD_COLOR)
+            if src_img is None:
+                raise ValueError(f"Failed to read source image: {source_image}")
+            height, width = src_img.shape[:2]
+
+            for word in words:
+                x1, x2, y1, y2 = word["box"]
+                x1 = max(0, min(x1, width - 1))
+                x2 = max(1, min(x2, width))
+                y1 = max(0, min(y1, height - 1))
+                y2 = max(1, min(y2, height))
+                if x2 <= x1 or y2 <= y1:
+                    continue
+
+                polygons.append([[x1, y1], [x2, y1], [x2, y2], [x1, y2]])
+
+                crop_name = f"{page_key}_{x1}_{x2}_{y1}_{y2}.png"
+                crop_target = rec_images_dir / crop_name
+                crop_img = src_img[y1:y2, x1:x2]
+                cv2.imwrite(str(crop_target), crop_img)
+                split_cfg["recognition_labels"][crop_name] = word["text"]
+
+            split_cfg["detection_labels"][det_filename] = {
+                "img_dimensions": [page.get("width", 0), page.get("height", 0)],
+                "img_hash": self._file_sha256(det_target),
+                "polygons": polygons,
+            }
+
+        for split_cfg in split_data.values():
+            self._write_json_map(split_cfg["root"] / "detection" / "labels.json", split_cfg["detection_labels"])
+            self._write_json_map(split_cfg["root"] / "recognition" / "labels.json", split_cfg["recognition_labels"])
+
+        removed_files = 0
+        for filename, page_indices in by_file.items():
+            filepath = MATCHED_OCR_DIR / filename
+            data = self.loaded_files.get(filename)
+            if not data:
+                continue
+
+            for page_index in sorted(page_indices, reverse=True):
+                if page_index < len(data.get("pages", [])):
+                    data["pages"].pop(page_index)
+
+            for new_idx, page in enumerate(data.get("pages", [])):
+                page["page_index"] = new_idx
+
+            if data.get("pages"):
+                with open(filepath, "w") as f:
+                    json.dump(data, f, indent=2)
+            else:
+                filepath.unlink(missing_ok=True)
+                source_png = MATCHED_OCR_DIR / f"{Path(filename).stem}.png"
+                source_png.unlink(missing_ok=True)
+                removed_files += 1
+
+        self.loaded_files.clear()
+        self.assignments.clear()
+        self.page_diff_flags.clear()
+        self.refresh_existing_page_keys()
+
+        return {"saved_pages": len(pending), "removed_files": removed_files}
+
+    def get_assignable_page_count_for_file(self, filename: str) -> int:
+        """Get assignable page count for a matched-ocr file without loading it in UI state."""
+        filepath = MATCHED_OCR_DIR / filename
+        if not filepath.exists():
+            return 0
+
+        try:
+            with open(filepath) as f:
+                data = json.load(f)
+            pages = data.get("pages", [])
+            return len(self.get_assignable_page_indices(filename, pages))
+        except Exception:
+            return 0
+
     def get_available_files(self) -> list[str]:
         """Get list of available JSON files in matched-ocr."""
         if not MATCHED_OCR_DIR.exists():
             return []
-        return [f.name for f in MATCHED_OCR_DIR.glob("*.json")]
+
+        visible_files = []
+        for candidate in sorted(MATCHED_OCR_DIR.glob("*.json")):
+            if self.get_assignable_page_count_for_file(candidate.name) > 0:
+                visible_files.append(candidate.name)
+        return visible_files
 
     def get_page_count(self, filename: str) -> int:
         """Get number of pages in a file."""
-        if filename in self.loaded_files:
-            return len(self.loaded_files[filename].get("pages", []))
+        if filename in self.assignments:
+            return len(self.assignments[filename])
         return 0
 
     def assign_page(self, filename: str, page_index: int, target: str):
         """Assign a page to train, val, or None."""
         if filename in self.assignments:
-            self.assignments[filename][page_index] = target if target != "none" else None
+            self.assignments[filename][page_index] = target if target in {"train", "val"} else None
 
     def update_stats(self):
         """Update total and assigned page counts."""
-        self.total_pages = sum(len(self.loaded_files.get(f, {}).get("pages", [])) for f in self.loaded_files)
+        self.total_pages = sum(len(file_assigns) for file_assigns in self.assignments.values())
         self.assigned_pages = sum(
-            1 for file_assigns in self.assignments.values() if any(v is not None for v in file_assigns.values())
+            1
+            for file_assigns in self.assignments.values()
+            for assignment in file_assigns.values()
+            if assignment is not None
         )
+
+    @staticmethod
+    def project_from_filename(filename: str) -> str:
+        """Extract a project key from a matched-ocr filename."""
+        stem = Path(filename).stem
+        if "_" not in stem:
+            return stem
+        return stem.rsplit("_", 1)[0]
+
+    def get_split_task_pages(self) -> dict:
+        """Group pages by split and project, mirrored for detection/recognition."""
+        split_projects = {
+            "unassigned": defaultdict(list),
+            "train": defaultdict(list),
+            "val": defaultdict(list),
+        }
+
+        for filename, file_assignments in self.assignments.items():
+            if filename not in self.loaded_files:
+                continue
+
+            project_key = self.project_from_filename(filename)
+            for page_index, assignment in file_assignments.items():
+                split_key = assignment if assignment in {"train", "val"} else "unassigned"
+                diff_suffix = " [different]" if self.is_flagged_different(filename, page_index) else ""
+                page_label = f"{Path(filename).stem} · page {page_index + 1}{diff_suffix}"
+                split_projects[split_key][project_key].append(page_label)
+
+        split_views = {}
+        for split_key, projects in split_projects.items():
+            ordered_projects = {
+                project: sorted(project_pages)
+                for project, project_pages in sorted(projects.items(), key=lambda item: item[0])
+            }
+            split_views[split_key] = {
+                "detection": {project: list(pages) for project, pages in ordered_projects.items()},
+                "recognition": {project: list(pages) for project, pages in ordered_projects.items()},
+            }
+
+        return split_views
 
     def export_datasets(self) -> dict:
         """Export training and validation datasets."""
@@ -139,38 +655,83 @@ def create_ui():
 
             # Available files browser
             with ui.card().classes("w-full"):
-                ui.label("Available JSON Files").classes("font-semibold")
-                available_files = dataset_manager.get_available_files()
+                ui.label("Available JSON Files (non-overlapping)").classes("font-semibold")
 
                 async def load_file(filename: str):
                     try:
                         filepath = MATCHED_OCR_DIR / filename
                         dataset_manager.load_json_file(filepath)
                         page_count = dataset_manager.get_page_count(filename)
-                        files_label.set_text(f"✓ Loaded: {filename} ({page_count} pages)")
+                        diff_count = sum(
+                            1
+                            for idx in dataset_manager.assignments.get(filename, {})
+                            if dataset_manager.is_flagged_different(filename, idx)
+                        )
+
+                        if page_count == 0:
+                            files_label.set_text(
+                                f"↷ Skipped: {filename} (all pages already exist in ml-training/ml-validation)"
+                            )
+                        elif diff_count:
+                            files_label.set_text(
+                                f"✓ Loaded: {filename} ({page_count} assignable pages, {diff_count} different/newer)"
+                            )
+                        else:
+                            files_label.set_text(f"✓ Loaded: {filename} ({page_count} assignable pages)")
                         refresh_page_grid()
                         update_stats()
                     except Exception as e:
                         files_label.set_text(f"✗ Error: {e}")
 
                 files_label = ui.label("Select file to load...")
-                with ui.row():
-                    for fname in available_files[:10]:  # Show first 10
-                        ui.button(
-                            fname[:20] + "..." if len(fname) > 20 else fname,
-                            on_click=lambda f=fname: load_file(f),
-                        ).props("size=sm").tooltip(fname)
+                file_buttons_container = ui.row()
+
+                def refresh_available_file_buttons():
+                    file_buttons_container.clear()
+                    available_files = dataset_manager.get_available_files()
+                    with file_buttons_container:
+                        if not available_files:
+                            ui.label("No assignable matched-ocr files").classes("text-xs text-gray-500")
+                            return
+                        for fname in available_files[:10]:  # Show first 10
+                            ui.button(
+                                fname[:20] + "..." if len(fname) > 20 else fname,
+                                on_click=lambda f=fname: load_file(f),
+                            ).props("size=sm").tooltip(fname)
 
             # Page assignment grid
             ui.label("Assign Pages to Sets").classes("font-semibold mt-4")
 
             page_container = ui.column().classes("w-full border-l-4 border-blue-300 pl-4")
+            ui.label("Set Views (project accordion)").classes("font-semibold mt-4")
+            split_view_container = ui.column().classes("w-full border-l-4 border-emerald-300 pl-4")
 
-            async def refresh_page_grid():
+            def render_split_view(split_title: str, projects_by_task: dict):
+                with split_view_container:
+                    ui.label(split_title).classes("font-semibold text-sm mt-2")
+                    with ui.row().classes("w-full gap-4"):
+                        for task_name in ("detection", "recognition"):
+                            with ui.card().classes("flex-1"):
+                                task_projects = projects_by_task.get(task_name, {})
+                                ui.label(task_name).classes("font-medium text-sm")
+
+                                if not task_projects:
+                                    ui.label("No pages").classes("text-xs text-gray-500")
+                                    continue
+
+                                for project_key, page_labels in task_projects.items():
+                                    with ui.expansion(f"{project_key} ({len(page_labels)} pages)").classes("w-full"):
+                                        for page_label in page_labels:
+                                            ui.label(page_label).classes("text-xs text-gray-600")
+
+            def refresh_page_grid():
                 page_container.clear()
+                split_view_container.clear()
 
                 for filename, assignments in dataset_manager.assignments.items():
                     if filename not in dataset_manager.loaded_files:
+                        continue
+                    if not assignments:
                         continue
 
                     with page_container:
@@ -180,19 +741,23 @@ def create_ui():
                             for page_idx in assignments:
                                 current = assignments[page_idx]
 
-                                async def update_assignment(f=filename, p=page_idx, v=None):
-                                    dataset_manager.assign_page(f, p, v)
-                                    await refresh_page_grid()
-                                    update_stats()
-
                                 ui.select(
-                                    options=["none", "train", "val"],
-                                    value=current or "none",
+                                    options=["unassigned", "train", "val"],
+                                    value=current or "unassigned",
                                     on_change=lambda v, f=filename, p=page_idx: (
                                         dataset_manager.assign_page(f, p, v.value),
+                                        refresh_page_grid(),
                                         update_stats(),
                                     ),
                                 ).props("size=sm dense").classes("w-24")
+
+                                if dataset_manager.is_flagged_different(filename, page_idx):
+                                    ui.label("different/newer").classes("text-xs text-amber-700")
+
+                split_task_pages = dataset_manager.get_combined_split_task_pages()
+                render_split_view("ml-training", split_task_pages["train"])
+                render_split_view("ml-validation", split_task_pages["val"])
+                render_split_view("unassigned", split_task_pages["unassigned"])
 
             # Stats
             stats_label = ui.label("No data loaded").classes("text-sm text-gray-600 mt-4")
@@ -202,6 +767,33 @@ def create_ui():
                 stats_label.set_text(
                     f"📊 Total pages: {dataset_manager.total_pages} | Assigned: {dataset_manager.assigned_pages}"
                 )
+
+            def save_assignments():
+                try:
+                    result = dataset_manager.save_assignments()
+                    saved_pages = result.get("saved_pages", 0)
+                    removed_files = result.get("removed_files", 0)
+                    if saved_pages == 0:
+                        ui.notify("No assigned pages to save.", type="warning")
+                        return
+
+                    files_label.set_text(
+                        f"💾 Saved {saved_pages} pages to combined labels; removed {removed_files} fully-consumed matched files"
+                    )
+                    refresh_available_file_buttons()
+                    refresh_page_grid()
+                    update_stats()
+                    ui.notify("Assignments saved.", type="positive")
+                except Exception as e:
+                    ui.notify(str(e), type="negative")
+                    files_label.set_text(f"✗ Save failed: {e}")
+
+            with ui.row().classes("mt-3"):
+                ui.button("💾 Save Assignments", on_click=save_assignments).props("color=primary")
+
+            refresh_available_file_buttons()
+            refresh_page_grid()
+            update_stats()
 
         # ==================== TRAINING CONFIG SECTION ====================
         with ui.card().classes("flex-1"):
@@ -327,10 +919,13 @@ def create_ui():
         ui.label("🚀 Training Control").classes("text-lg font-bold")
 
         status_label = ui.label("Ready").classes("text-sm text-gray-600")
-        output_area = ui.textarea(
-            value="Training output will appear here...",
-            readonly=True,
-        ).classes("w-full h-64")
+        output_area = (
+            ui.textarea(
+                value="Training output will appear here...",
+            )
+            .props("readonly")
+            .classes("w-full h-64")
+        )
 
         def run_training():
             """Run training in background thread."""
@@ -340,22 +935,42 @@ def create_ui():
                 ui.notify("Training is already running!", type="warning")
                 return
 
-            # Export datasets
+            def recognition_label_count(split_root: Path) -> int:
+                labels_path = split_root / "recognition" / "labels.json"
+                if not labels_path.exists():
+                    return 0
+                try:
+                    with open(labels_path) as f:
+                        labels = json.load(f)
+                    return len(labels) if isinstance(labels, dict) else 0
+                except Exception:
+                    return 0
+
             try:
-                datasets = dataset_manager.export_datasets()
-                if not datasets["train"] or not datasets["val"]:
+                # Persist any pending selections before training.
+                pending_assignments = any(
+                    assignment in {"train", "val"}
+                    for file_assignments in dataset_manager.assignments.values()
+                    for assignment in file_assignments.values()
+                )
+                if pending_assignments:
+                    save_result = dataset_manager.save_assignments()
+                    refresh_available_file_buttons()
+                    refresh_page_grid()
+                    update_stats()
                     ui.notify(
-                        "Please assign pages to both training and validation sets!",
+                        f"Auto-saved {save_result.get('saved_pages', 0)} assigned pages before training.",
+                        type="positive",
+                    )
+
+                train_count = recognition_label_count(ML_TRAINING_DIR)
+                val_count = recognition_label_count(ML_VALIDATION_DIR)
+                if train_count == 0 or val_count == 0:
+                    ui.notify(
+                        "Please assign and save pages to both training and validation sets!",
                         type="warning",
                     )
                     return
-
-                # Save dataset info
-                train_info_file = ML_TRAINING_DIR / "dataset_info.json"
-                val_info_file = ML_VALIDATION_DIR / "dataset_info.json"
-
-                train_info_file.write_text(json.dumps({"pages": datasets["train"]}, indent=2))
-                val_info_file.write_text(json.dumps({"pages": datasets["val"]}, indent=2))
 
                 status_label.set_text("⏳ Training starting...")
                 output_area.value = "Starting training...\n"
@@ -364,10 +979,10 @@ def create_ui():
                 def train_worker():
                     global training_thread, training_cancelled
                     try:
-                        # Call training directly
+                        # Train against the persisted combined recognition datasets.
                         train_from_config(
-                            train_path=ML_TRAINING_DIR,
-                            val_path=ML_VALIDATION_DIR,
+                            train_path=ML_TRAINING_DIR / "recognition",
+                            val_path=ML_VALIDATION_DIR / "recognition",
                             arch=training_config.arch,
                             epochs=training_config.epochs,
                             batch_size=training_config.batch_size,
@@ -422,8 +1037,10 @@ def create_ui():
 
 def main():
     """Entry point for the training UI."""
-    create_ui()
-    ui.run(host="127.0.0.1", port=8000, reload=True)
+    # CLI entrypoints can fail with NiceGUI auto-reload subprocess startup;
+    # keep reload opt-in via env var for local debugging.
+    reload_enabled = os.getenv("NICEGUI_RELOAD", "false").lower() in {"1", "true", "yes"}
+    ui.run(create_ui, host="127.0.0.1", port=8000, reload=reload_enabled)
 
 
 if __name__ in {"__main__", "__mp_main__"}:
