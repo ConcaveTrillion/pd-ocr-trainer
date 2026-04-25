@@ -72,7 +72,8 @@ all-dev = [
 ]
 
 [project.scripts]
-train-pgdp-ocr = "train_pgdp_ocr.trainer:main"
+train-pgdp-ocr-recog = "train_pgdp_ocr.train_recog:main"
+train-pgdp-ocr-detect = "train_pgdp_ocr.train_detect:main"
 train-pgdp-ocr-ui = "train_pgdp_ocr.ui:main"
 
 [tool.uv.sources]

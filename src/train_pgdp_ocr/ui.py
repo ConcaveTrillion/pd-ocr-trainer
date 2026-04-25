@@ -2,243 +2,275 @@
 
 import json
 import os
+import platform
 import shutil
 import threading
 from collections import defaultdict
-from hashlib import sha256
 from pathlib import Path
 
-import cv2
 import torch
+from doctr.datasets import VOCABS
 from nicegui import ui
 
-from train_pgdp_ocr.trainer import train_from_config
+from train_pgdp_ocr.train_detect import detect_from_config
+from train_pgdp_ocr.train_recog import train_from_config
 
 # Get the project root (parent of src directory)
 PROJECT_ROOT = Path(__file__).parent.parent.parent
-MATCHED_OCR_DIR = PROJECT_ROOT / "matched-ocr"
 ML_TRAINING_DIR = PROJECT_ROOT / "ml-training"
 ML_VALIDATION_DIR = PROJECT_ROOT / "ml-validation"
+APP_NAME = "pgdp-ocr-labeler"
+MODEL_STORE_DIRNAME = "pgdp-ml-models"
+MODEL_NAME_PREFIX = "pgdp"
+BASE_OCR_PROFILE = "base-ocr"
+
+
+def get_os_data_parent() -> Path:
+    """Return OS-aware parent directory for application data roots."""
+    system_name = platform.system()
+
+    if system_name == "Linux":
+        data_home = os.getenv("XDG_DATA_HOME")
+        base_dir = Path(data_home).expanduser() if data_home else Path.home() / ".local" / "share"
+    elif system_name == "Darwin":
+        base_dir = Path.home() / "Library" / "Application Support"
+    elif system_name == "Windows":
+        appdata = os.getenv("APPDATA")
+        base_dir = Path(appdata) if appdata else Path.home() / "AppData" / "Roaming"
+    else:
+        base_dir = Path.home() / ".local" / "share"
+
+    return base_dir
+
+
+APP_DATA_ROOT = get_os_data_parent() / APP_NAME
+SHARED_MODELS_DIR = get_os_data_parent() / MODEL_STORE_DIRNAME
+
+NOTEBOOK_DEFAULT_VOCAB_LIBRARY = ["multilingual", "currency"]
+NOTEBOOK_DEFAULT_CUSTOM_CHARACTERS = "⸺¡¿—‘’“”′″"
 
 # Ensure directories exist
 ML_TRAINING_DIR.mkdir(exist_ok=True)
 ML_VALIDATION_DIR.mkdir(exist_ok=True)
+SHARED_MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-class DatasetManager:
-    """Manages dataset loading and page assignments."""
+def _normalize_profile_name(name: str) -> str:
+    value = (name or "").strip().lower().replace(" ", "-").replace("_", "-")
+    return value or BASE_OCR_PROFILE
 
-    def __init__(self):
-        self.loaded_files = {}  # {filename: json_data}
-        self.assignments = {}  # {filename: {page_index: 'train'|'val'|None}}
-        self.existing_page_keys = set()
-        self.page_diff_flags = {}  # {(filename, page_index): bool}
-        self.existing_detection_by_page = {}
-        self.existing_recognition_by_page = defaultdict(list)
-        self.total_pages = 0
-        self.assigned_pages = 0
-        self.refresh_existing_page_keys()
 
-    @staticmethod
-    def page_instance_key(filename: str, page_index: int) -> str:
-        """Build a stable key for a matched-ocr page."""
-        return f"{Path(filename).stem}_{page_index}"
+def _profile_model_root(profile: str) -> Path:
+    return SHARED_MODELS_DIR / _normalize_profile_name(profile)
 
-    @staticmethod
-    def page_key_from_image_stem(image_stem: str) -> str:
-        """Extract the page key used by dataset images.
 
-        Recognition crops use <page_key>_<x1>_<x2>_<y1>_<y2> naming,
-        while detection images are stored directly as <page_key>.
-        """
-        parts = image_stem.split("_")
-        if len(parts) >= 6 and all(part.isdigit() for part in parts[-4:]):
-            return "_".join(parts[:-4])
-        return image_stem
+def _model_output_dir(profile: str, model_type: str) -> Path:
+    return _profile_model_root(profile) / model_type
 
-    def refresh_existing_page_keys(self):
-        """Read current train/val datasets and index all existing page keys."""
-        indexed_keys = set()
-        detection_by_page = {}
-        recognition_by_page = defaultdict(list)
-        dataset_roots = [ML_TRAINING_DIR, ML_VALIDATION_DIR]
-        tasks = ["detection", "recognition"]
 
-        for dataset_root in dataset_roots:
-            for task in tasks:
-                images_dir = dataset_root / task / "images"
-                if not images_dir.exists():
-                    continue
+def _move_dir_contents(src: Path, dest: Path) -> None:
+    if not src.exists() or not src.is_dir():
+        return
+    dest.mkdir(parents=True, exist_ok=True)
+    for item in src.iterdir():
+        target = dest / item.name
+        if item.is_dir() and target.exists() and target.is_dir():
+            _move_dir_contents(item, target)
+            item.rmdir()
+        else:
+            if target.exists() and target.is_file():
+                target.unlink()
+            shutil.move(str(item), str(target))
 
-                for image_path in images_dir.glob("*.*"):
-                    page_key = self.page_key_from_image_stem(image_path.stem)
-                    indexed_keys.add(page_key)
 
-                labels_path = dataset_root / task / "labels.json"
-                if not labels_path.exists():
-                    continue
+def migrate_existing_model_artifacts() -> None:
+    """Move legacy model outputs into pgdp-ml-models/base-ocr/<model-type>."""
+    legacy_roots = [
+        SHARED_MODELS_DIR,
+        APP_DATA_ROOT / MODEL_STORE_DIRNAME,
+        PROJECT_ROOT / "ml-models",
+    ]
+    for model_type in ("detection", "recognition"):
+        destination = _model_output_dir(BASE_OCR_PROFILE, model_type)
+        for legacy_root in legacy_roots:
+            source = legacy_root / model_type
+            if source.exists() and source.resolve() != destination.resolve():
+                _move_dir_contents(source, destination)
+                if source.exists() and source.is_dir() and not any(source.iterdir()):
+                    source.rmdir()
 
-                try:
-                    with open(labels_path) as f:
-                        labels_data = json.load(f)
-                except Exception:
-                    continue
 
-                if task == "detection":
-                    for image_name, meta in labels_data.items():
-                        page_key = Path(image_name).stem
-                        indexed_keys.add(page_key)
-                        if page_key not in detection_by_page:
-                            detection_by_page[page_key] = meta
-                else:
-                    for crop_name, text in labels_data.items():
-                        page_key = self.page_key_from_image_stem(Path(crop_name).stem)
-                        indexed_keys.add(page_key)
-                        recognition_by_page[page_key].append(str(text))
-
-        self.existing_page_keys = indexed_keys
-        self.existing_detection_by_page = detection_by_page
-        self.existing_recognition_by_page = recognition_by_page
-
-    def is_existing_page(self, filename: str, page_index: int) -> bool:
-        """Check whether a matched-ocr page already exists in train/val datasets."""
-        return self.page_instance_key(filename, page_index) in self.existing_page_keys
-
-    @staticmethod
-    def _hash_values(values: list[str]) -> str:
-        return sha256("\n".join(sorted(values)).encode("utf-8")).hexdigest()
-
-    def _extract_words(self, node: dict | list | None, words: list[dict]):
-        """Recursively collect word nodes from a page tree."""
-        if isinstance(node, list):
-            for child in node:
-                self._extract_words(child, words)
-            return
-        if not isinstance(node, dict):
-            return
-
-        if node.get("type") == "Word":
-            words.append(node)
-            return
-
-        if "items" in node:
-            self._extract_words(node.get("items"), words)
-
-    @staticmethod
-    def _bbox_to_pixels(word: dict, width: int, height: int) -> str | None:
-        bbox = word.get("bounding_box", {})
-        top_left = bbox.get("top_left") if isinstance(bbox, dict) else None
-        bottom_right = bbox.get("bottom_right") if isinstance(bbox, dict) else None
-        if not (isinstance(top_left, dict) and isinstance(bottom_right, dict)):
-            return None
-
-        try:
-            x1 = int(round(float(top_left["x"]) * width))
-            y1 = int(round(float(top_left["y"]) * height))
-            x2 = int(round(float(bottom_right["x"]) * width))
-            y2 = int(round(float(bottom_right["y"]) * height))
-        except Exception:
-            return None
-
-        return f"{x1}_{x2}_{y1}_{y2}"
-
-    def is_page_different(self, filename: str, page_index: int, page: dict) -> bool:
-        """Return True when a matched page exists already but content appears different."""
-        page_key = self.page_instance_key(filename, page_index)
-        if page_key not in self.existing_page_keys:
-            return False
-
-        existing_detection = self.existing_detection_by_page.get(page_key, {})
-        existing_texts = self.existing_recognition_by_page.get(page_key, [])
-
-        width = page.get("width")
-        height = page.get("height")
-        words = []
-        self._extract_words(page.get("items", []), words)
-
-        matched_texts = []
-        matched_boxes = []
-        for word in words:
-            token = word.get("ground_truth_text") or word.get("text") or ""
-            token = str(token).strip()
-            if token:
-                matched_texts.append(token)
-            if isinstance(width, int) and isinstance(height, int):
-                box_key = self._bbox_to_pixels(word, width, height)
-                if box_key:
-                    matched_boxes.append(box_key)
-
-        existing_dims = existing_detection.get("img_dimensions") if isinstance(existing_detection, dict) else None
-        if (
-            isinstance(existing_dims, list)
-            and len(existing_dims) == 2
-            and isinstance(width, int)
-            and isinstance(height, int)
-        ):
-            if [width, height] != existing_dims:
-                return True
-
-        existing_polygons = existing_detection.get("polygons") if isinstance(existing_detection, dict) else None
-        if isinstance(existing_polygons, list):
-            existing_polygon_boxes = []
-            for polygon in existing_polygons:
-                if not isinstance(polygon, list) or not polygon:
-                    continue
-                try:
-                    xs = [int(point[0]) for point in polygon if isinstance(point, list) and len(point) >= 2]
-                    ys = [int(point[1]) for point in polygon if isinstance(point, list) and len(point) >= 2]
-                except Exception:
-                    continue
-                if xs and ys:
-                    existing_polygon_boxes.append(f"{min(xs)}_{max(xs)}_{min(ys)}_{max(ys)}")
-
-            if matched_boxes and self._hash_values(matched_boxes) != self._hash_values(existing_polygon_boxes):
-                return True
-
-        if existing_texts:
-            if self._hash_values(matched_texts) != self._hash_values(existing_texts):
-                return True
-
-        return False
-
-    def load_json_file(self, filepath: Path) -> dict:
-        """Load a JSON file from matched-ocr."""
-        try:
-            with open(filepath) as f:
-                data = json.load(f)
-            filename = filepath.name
-            self.loaded_files[filename] = data
-
-            # Count pages
-            pages = data.get("pages", [])
-            self.page_diff_flags = {k: v for k, v in self.page_diff_flags.items() if k[0] != filename}
-
-            assignable_page_indices = self.get_assignable_page_indices(filename, pages)
-            self.assignments[filename] = dict.fromkeys(assignable_page_indices)
-
-            return data
-        except Exception as e:
-            raise ValueError(f"Failed to load {filepath.name}: {e}") from e
-
-    def get_assignable_page_indices(self, filename: str, pages: list[dict]) -> list[int]:
-        """Return page indices that are new or overlap with meaningful differences."""
-        assignable = []
-        for idx, page in enumerate(pages):
-            if not self.is_existing_page(filename, idx):
-                assignable.append(idx)
-                self.page_diff_flags[(filename, idx)] = False
+def get_available_model_profiles() -> list[str]:
+    """List trainable model profiles derived from export subfolders plus base-ocr."""
+    profiles = {BASE_OCR_PROFILE}
+    if SHARED_MODELS_DIR.exists():
+        for profile_dir in SHARED_MODELS_DIR.iterdir():
+            if profile_dir.is_dir():
+                profiles.add(_normalize_profile_name(profile_dir.name))
+    export_root = ExportManager.get_export_root()
+    if export_root.exists():
+        for project_dir in export_root.iterdir():
+            if not project_dir.is_dir():
                 continue
+            for subfolder in project_dir.iterdir():
+                if subfolder.is_dir():
+                    profiles.add(_normalize_profile_name(subfolder.name))
+    return sorted(profiles)
 
-            is_different = self.is_page_different(filename, idx, page)
-            self.page_diff_flags[(filename, idx)] = is_different
-            if is_different:
-                assignable.append(idx)
 
-        return assignable
+def _unique_chars_in_order(chars: str) -> str:
+    """Keep first occurrence order while removing duplicate characters."""
+    return "".join(dict.fromkeys(chars))
 
-    def is_flagged_different(self, filename: str, page_index: int) -> bool:
-        """Whether the page is an overlap that differs from existing datasets."""
-        return self.page_diff_flags.get((filename, page_index), False)
+
+def build_custom_vocab_arg(vocab_names: list[str], custom_chars: str) -> str:
+    """Build CUSTOM vocab argument from selected library vocab names and custom chars."""
+    library_chars = "".join(VOCABS[name] for name in vocab_names if name in VOCABS)
+    combined_chars = _unique_chars_in_order(library_chars + (custom_chars or ""))
+    if not combined_chars:
+        raise ValueError("Vocabulary cannot be empty. Select at least one library vocab or custom character.")
+    return f"CUSTOM:{combined_chars}"
+
+
+def _prefixed_model_name(model_type: str, base_name: str, profile: str = BASE_OCR_PROFILE) -> str:
+    """Return a normalized model name with enforced prefix, profile, and type."""
+    normalized = (base_name or "").strip().replace(" ", "-")
+    normalized_profile = _normalize_profile_name(profile)
+    if normalized.startswith(f"{MODEL_NAME_PREFIX}-"):
+        normalized = normalized.removeprefix(f"{MODEL_NAME_PREFIX}-")
+    if normalized.startswith(f"{normalized_profile}-"):
+        normalized = normalized.removeprefix(f"{normalized_profile}-")
+    if normalized.startswith(f"{model_type}-"):
+        normalized = normalized.removeprefix(f"{model_type}-")
+    if not normalized:
+        normalized = "finetuned"
+    return f"{MODEL_NAME_PREFIX}-{normalized_profile}-{model_type}-{normalized}"
+
+
+def _project_from_stem(stem: str) -> str:
+    """Strip trailing digit-only segments from an image stem to recover the project ID."""
+    parts = stem.split("_")
+    end = len(parts)
+    while end > 1 and parts[end - 1].isdigit():
+        end -= 1
+    return "_".join(parts[:end])
+
+
+def _group_existing_by_project(split_root: Path) -> dict[str, list[str]]:
+    """Return {project_id: [img_name, ...]} from the detection (or recognition) labels.json."""
+    groups: dict[str, list[str]] = defaultdict(list)
+    for task in ("detection", "recognition"):
+        labels_path = split_root / task / "labels.json"
+        if not labels_path.exists():
+            continue
+        try:
+            with open(labels_path) as f:
+                labels = json.load(f)
+        except Exception:
+            continue
+        for img_name in labels:
+            groups[_project_from_stem(Path(img_name).stem)].append(img_name)
+        if task == "detection" and groups:
+            break
+    return {k: sorted(v) for k, v in sorted(groups.items())}
+
+
+class ExportManager:
+    """Manages ocr-labeler DocTR export assignments for training."""
+
+    def __init__(self) -> None:
+        self.assignments: dict[str, str | None] = {}
+        self.changed_keys: set[str] = set()
+        self.scan()
+
+    @staticmethod
+    def get_export_root() -> Path:
+        """OS-aware path to the ocr-labeler DocTR export root."""
+        system = platform.system()
+        if system == "Darwin":
+            base = Path.home() / "Library" / "Application Support" / "pgdp-ocr-labeler"
+        elif system == "Windows":
+            appdata = os.environ.get("APPDATA", "")
+            base = (
+                Path(appdata) / "pgdp-ocr-labeler"
+                if appdata
+                else Path.home() / "AppData" / "Roaming" / "pgdp-ocr-labeler"
+            )
+        else:
+            xdg = os.environ.get("XDG_DATA_HOME", "")
+            base = Path(xdg) / "pgdp-ocr-labeler" if xdg else Path.home() / ".local" / "share" / "pgdp-ocr-labeler"
+        return base / "doctr-export"
+
+    def scan(self) -> None:
+        """Scan the export root and rebuild available exports, preserving existing assignments."""
+        export_root = self.get_export_root()
+
+        # Index existing images in both split directories for change detection.
+        existing_image_names: set[str] = set()
+        for split_root in (ML_TRAINING_DIR, ML_VALIDATION_DIR):
+            for task in ("detection", "recognition"):
+                images_dir = split_root / task / "images"
+                if images_dir.exists():
+                    for img in images_dir.iterdir():
+                        existing_image_names.add(img.name)
+
+        new_assignments: dict[str, str | None] = {}
+        new_changed: set[str] = set()
+
+        if export_root.exists():
+            for project_dir in sorted(export_root.iterdir()):
+                if not project_dir.is_dir():
+                    continue
+                for subfolder in sorted(project_dir.iterdir()):
+                    if not subfolder.is_dir():
+                        continue
+                    has_detection = (subfolder / "detection" / "labels.json").exists()
+                    has_recognition = (subfolder / "recognition" / "labels.json").exists()
+                    if not has_detection and not has_recognition:
+                        continue
+                    key = f"{project_dir.name}/{subfolder.name}"
+                    # Preserve existing assignment.
+                    new_assignments[key] = self.assignments.get(key)
+                    # Mark as "changed" if any source image already exists in a split dir.
+                    for task in ("detection", "recognition"):
+                        src_images = subfolder / task / "images"
+                        if src_images.exists():
+                            if any(img.name in existing_image_names for img in src_images.iterdir()):
+                                new_changed.add(key)
+                                break
+
+        self.assignments = new_assignments
+        self.changed_keys = new_changed
+
+    def get_by_split(self) -> dict[str, dict[str, list[str]]]:
+        """Return exports grouped by split then project: {split: {project: [keys]}}."""
+        result: dict[str, dict[str, list[str]]] = {
+            "unassigned": defaultdict(list),
+            "train": defaultdict(list),
+            "val": defaultdict(list),
+        }
+        for key, split in self.assignments.items():
+            col = split if split in {"train", "val"} else "unassigned"
+            project = key.split("/")[0]
+            result[col][project].append(key)
+        return {k: dict(v) for k, v in result.items()}
+
+    def assign(self, key: str, target: str | None) -> None:
+        if key in self.assignments:
+            self.assignments[key] = target if target in {"train", "val"} else None
+
+    def assign_project(self, project_id: str, target: str | None) -> None:
+        for key in self.assignments:
+            if key.startswith(f"{project_id}/"):
+                self.assignments[key] = target if target in {"train", "val"} else None
+
+    def is_changed(self, key: str) -> bool:
+        return key in self.changed_keys
+
+    def export_path(self, key: str) -> Path:
+        """Return the filesystem path for an export key."""
+        parts = key.split("/", 1)
+        return self.get_export_root() / parts[0] / parts[1]
 
     @staticmethod
     def _load_json_map(path: Path) -> dict:
@@ -252,392 +284,219 @@ class DatasetManager:
             return {}
 
     @staticmethod
-    def _write_json_map(path: Path, data: dict):
+    def _write_json_map(path: Path, data: dict) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w") as f:
             json.dump(data, f, indent=2)
 
     @staticmethod
-    def _file_sha256(path: Path) -> str:
-        digest = sha256()
-        with open(path, "rb") as f:
-            for chunk in iter(lambda: f.read(1024 * 1024), b""):
-                digest.update(chunk)
-        return digest.hexdigest()
+    def get_existing_projects(split_root: Path) -> dict[str, int]:
+        """Return {project_id: page_count} already present in a split directory."""
+        return {k: len(v) for k, v in _group_existing_by_project(split_root).items()}
 
     @staticmethod
-    def project_from_page_key(page_key: str) -> str:
-        parts = page_key.split("_")
-        if len(parts) >= 3 and parts[-1].isdigit() and parts[-2].isdigit():
-            return "_".join(parts[:-2])
-        if "_" in page_key:
-            return page_key.rsplit("_", 1)[0]
-        return page_key
+    def get_existing_pages(split_root: Path, project_id: str) -> list[str]:
+        """Return sorted image names for project_id already present in split_root."""
+        return _group_existing_by_project(split_root).get(project_id, [])
 
-    def _page_words_with_boxes(self, page: dict) -> list[dict]:
-        words = []
-        self._extract_words(page.get("items", []), words)
-        width = page.get("width")
-        height = page.get("height")
-        if not isinstance(width, int) or not isinstance(height, int):
-            return []
-
-        out = []
-        for word in words:
-            text = str(word.get("ground_truth_text") or word.get("text") or "").strip()
-            if not text:
+    def move_existing_project(self, project_id: str, from_split: str, to_split: str) -> int:
+        """Physically move an on-disk project between ml-training and ml-validation."""
+        split_map = {"train": ML_TRAINING_DIR, "val": ML_VALIDATION_DIR}
+        src_root = split_map.get(from_split)
+        dest_root = split_map.get(to_split)
+        if src_root is None or dest_root is None or src_root == dest_root:
+            return 0
+        moved = 0
+        for task in ("detection", "recognition"):
+            src_lp = src_root / task / "labels.json"
+            if not src_lp.exists():
                 continue
-            box = self._bbox_to_pixels(word, width, height)
-            if not box:
+            try:
+                with open(src_lp) as f:
+                    src_labels = json.load(f)
+            except Exception:
                 continue
-            x1s, x2s, y1s, y2s = box.split("_")
-            x1, x2, y1, y2 = int(x1s), int(x2s), int(y1s), int(y2s)
-            if x2 <= x1 or y2 <= y1:
+            to_move = {k: v for k, v in src_labels.items() if _project_from_stem(Path(k).stem) == project_id}
+            if not to_move:
                 continue
-            out.append({"text": text, "box": [x1, x2, y1, y2]})
-        return out
+            dest_lp = dest_root / task / "labels.json"
+            dest_images = dest_root / task / "images"
+            dest_images.mkdir(parents=True, exist_ok=True)
+            dest_labels: dict = {}
+            if dest_lp.exists():
+                try:
+                    with open(dest_lp) as f:
+                        dest_labels = json.load(f)
+                except Exception:
+                    pass
+            src_images = src_root / task / "images"
+            for img_name, meta in to_move.items():
+                src_img = src_images / img_name
+                if src_img.exists():
+                    shutil.move(str(src_img), dest_images / img_name)
+                del src_labels[img_name]
+                dest_labels[img_name] = meta
+                if task == "detection":
+                    moved += 1
+            with open(src_lp, "w") as f:
+                json.dump(src_labels, f, indent=2)
+            with open(dest_lp, "w") as f:
+                json.dump(dest_labels, f, indent=2)
+        return moved
 
-    def _source_image_path(self, filename: str, data: dict) -> Path:
-        source_path = data.get("source_path")
-        candidates = []
-        if isinstance(source_path, str) and source_path:
-            source_obj = Path(source_path)
-            candidates.append(PROJECT_ROOT / source_obj)
-            candidates.append(PROJECT_ROOT / source_obj.name)
-            candidates.append(MATCHED_OCR_DIR / source_obj.name)
-        candidates.append(MATCHED_OCR_DIR / f"{Path(filename).stem}.png")
+    def move_existing_page(self, page_name: str, from_split: str, to_split: str) -> int:
+        """Physically move one on-disk page (and its recognition crops) between splits."""
+        split_map = {"train": ML_TRAINING_DIR, "val": ML_VALIDATION_DIR}
+        src_root = split_map.get(from_split)
+        dest_root = split_map.get(to_split)
+        if src_root is None or dest_root is None or src_root == dest_root:
+            return 0
 
-        for candidate in candidates:
-            if candidate.exists():
-                return candidate
-        raise FileNotFoundError(f"Source image not found for {filename}")
-
-    @staticmethod
-    def _remove_page_prefixed_entries(data: dict, page_key: str):
-        prefix = f"{page_key}_"
-        to_delete = [key for key in data if key.startswith(prefix)]
-        for key in to_delete:
-            data.pop(key, None)
-
-    @staticmethod
-    def _remove_page_prefixed_images(images_dir: Path, page_key: str):
-        if not images_dir.exists():
-            return
-        pattern = f"{page_key}_*.png"
-        for image_path in images_dir.glob(pattern):
-            image_path.unlink(missing_ok=True)
-
-    def _existing_pages_for_split(self, split: str) -> dict:
-        split_root = ML_TRAINING_DIR if split == "train" else ML_VALIDATION_DIR
-        detection_labels = self._load_json_map(split_root / "detection" / "labels.json")
-        recognition_labels = self._load_json_map(split_root / "recognition" / "labels.json")
-
-        page_keys = set()
-        for image_name in detection_labels:
-            page_keys.add(Path(image_name).stem)
-        for crop_name in recognition_labels:
-            page_keys.add(self.page_key_from_image_stem(Path(crop_name).stem))
-
-        projects = defaultdict(list)
-        for page_key in sorted(page_keys):
-            project = self.project_from_page_key(page_key)
-            projects[project].append(f"{page_key} [existing]")
-
-        mirrored = {project: list(labels) for project, labels in projects.items()}
-        return {"detection": mirrored, "recognition": {k: list(v) for k, v in mirrored.items()}}
-
-    @staticmethod
-    def _merge_projects(primary: dict, secondary: dict) -> dict:
-        merged = {}
-        all_projects = set(primary.keys()) | set(secondary.keys())
-        for project in sorted(all_projects):
-            values = list(primary.get(project, [])) + list(secondary.get(project, []))
-            merged[project] = sorted(set(values))
-        return merged
-
-    def get_combined_split_task_pages(self) -> dict:
-        assigned = self.get_split_task_pages()
-        existing = {
-            "train": self._existing_pages_for_split("train"),
-            "val": self._existing_pages_for_split("val"),
-        }
-
-        combined = {
-            "unassigned": assigned["unassigned"],
-            "train": {"detection": {}, "recognition": {}},
-            "val": {"detection": {}, "recognition": {}},
-        }
-
-        for split in ("train", "val"):
-            for task in ("detection", "recognition"):
-                combined[split][task] = self._merge_projects(existing[split][task], assigned[split][task])
-
-        return combined
-
-    def save_assignments(self) -> dict:
-        """Persist assignments into combined labels and prune saved pages from matched-ocr."""
-        pending = []
-        by_file = defaultdict(list)
-
-        for filename, file_assignments in self.assignments.items():
-            data = self.loaded_files.get(filename)
-            if not data:
+        page_stem = Path(page_name).stem
+        moved = 0
+        for task in ("detection", "recognition"):
+            src_lp = src_root / task / "labels.json"
+            if not src_lp.exists():
                 continue
-            pages = data.get("pages", [])
-            for page_index, split in file_assignments.items():
-                if split not in {"train", "val"}:
-                    continue
-                if page_index >= len(pages):
-                    continue
-                pending.append((filename, page_index, split))
-                by_file[filename].append(page_index)
-
-        if not pending:
-            return {"saved_pages": 0, "removed_files": 0}
-
-        split_data = {
-            "train": {
-                "root": ML_TRAINING_DIR,
-                "detection_labels": self._load_json_map(ML_TRAINING_DIR / "detection" / "labels.json"),
-                "recognition_labels": self._load_json_map(ML_TRAINING_DIR / "recognition" / "labels.json"),
-            },
-            "val": {
-                "root": ML_VALIDATION_DIR,
-                "detection_labels": self._load_json_map(ML_VALIDATION_DIR / "detection" / "labels.json"),
-                "recognition_labels": self._load_json_map(ML_VALIDATION_DIR / "recognition" / "labels.json"),
-            },
-        }
-
-        for split_cfg in split_data.values():
-            (split_cfg["root"] / "detection" / "images").mkdir(parents=True, exist_ok=True)
-            (split_cfg["root"] / "recognition" / "images").mkdir(parents=True, exist_ok=True)
-
-        for filename, page_index, split in pending:
-            data = self.loaded_files[filename]
-            page = data["pages"][page_index]
-            page_key = self.page_instance_key(filename, page_index)
-            source_image = self._source_image_path(filename, data)
-
-            # Replace semantics by page key: remove stale entries from both train/val before adding.
-            for existing_split_cfg in split_data.values():
-                det_name = f"{page_key}.png"
-                existing_split_cfg["detection_labels"].pop(det_name, None)
-                self._remove_page_prefixed_entries(existing_split_cfg["recognition_labels"], page_key)
-
-                det_existing_path = existing_split_cfg["root"] / "detection" / "images" / det_name
-                det_existing_path.unlink(missing_ok=True)
-                self._remove_page_prefixed_images(existing_split_cfg["root"] / "recognition" / "images", page_key)
-
-            split_cfg = split_data[split]
-            det_images_dir = split_cfg["root"] / "detection" / "images"
-            rec_images_dir = split_cfg["root"] / "recognition" / "images"
-
-            det_filename = f"{page_key}.png"
-            det_target = det_images_dir / det_filename
-            shutil.copy2(source_image, det_target)
-
-            words = self._page_words_with_boxes(page)
-            polygons = []
-            src_img = cv2.imread(str(source_image), cv2.IMREAD_COLOR)
-            if src_img is None:
-                raise ValueError(f"Failed to read source image: {source_image}")
-            height, width = src_img.shape[:2]
-
-            for word in words:
-                x1, x2, y1, y2 = word["box"]
-                x1 = max(0, min(x1, width - 1))
-                x2 = max(1, min(x2, width))
-                y1 = max(0, min(y1, height - 1))
-                y2 = max(1, min(y2, height))
-                if x2 <= x1 or y2 <= y1:
-                    continue
-
-                polygons.append([[x1, y1], [x2, y1], [x2, y2], [x1, y2]])
-
-                crop_name = f"{page_key}_{x1}_{x2}_{y1}_{y2}.png"
-                crop_target = rec_images_dir / crop_name
-                crop_img = src_img[y1:y2, x1:x2]
-                cv2.imwrite(str(crop_target), crop_img)
-                split_cfg["recognition_labels"][crop_name] = word["text"]
-
-            split_cfg["detection_labels"][det_filename] = {
-                "img_dimensions": [page.get("width", 0), page.get("height", 0)],
-                "img_hash": self._file_sha256(det_target),
-                "polygons": polygons,
-            }
-
-        for split_cfg in split_data.values():
-            self._write_json_map(split_cfg["root"] / "detection" / "labels.json", split_cfg["detection_labels"])
-            self._write_json_map(split_cfg["root"] / "recognition" / "labels.json", split_cfg["recognition_labels"])
-
-        removed_files = 0
-        for filename, page_indices in by_file.items():
-            filepath = MATCHED_OCR_DIR / filename
-            data = self.loaded_files.get(filename)
-            if not data:
+            try:
+                with open(src_lp) as f:
+                    src_labels = json.load(f)
+            except Exception:
                 continue
 
-            for page_index in sorted(page_indices, reverse=True):
-                if page_index < len(data.get("pages", [])):
-                    data["pages"].pop(page_index)
-
-            for new_idx, page in enumerate(data.get("pages", [])):
-                page["page_index"] = new_idx
-
-            if data.get("pages"):
-                with open(filepath, "w") as f:
-                    json.dump(data, f, indent=2)
+            if task == "detection":
+                keys = [k for k in src_labels if Path(k).stem == page_stem]
             else:
-                filepath.unlink(missing_ok=True)
-                source_png = MATCHED_OCR_DIR / f"{Path(filename).stem}.png"
-                source_png.unlink(missing_ok=True)
-                removed_files += 1
+                keys = [k for k in src_labels if Path(k).stem.startswith(f"{page_stem}_")]
 
-        self.loaded_files.clear()
-        self.assignments.clear()
-        self.page_diff_flags.clear()
-        self.refresh_existing_page_keys()
+            if not keys:
+                continue
 
-        return {"saved_pages": len(pending), "removed_files": removed_files}
+            dest_lp = dest_root / task / "labels.json"
+            dest_images = dest_root / task / "images"
+            dest_images.mkdir(parents=True, exist_ok=True)
 
-    def get_assignable_page_count_for_file(self, filename: str) -> int:
-        """Get assignable page count for a matched-ocr file without loading it in UI state."""
-        filepath = MATCHED_OCR_DIR / filename
-        if not filepath.exists():
-            return 0
+            dest_labels: dict = {}
+            if dest_lp.exists():
+                try:
+                    with open(dest_lp) as f:
+                        dest_labels = json.load(f)
+                except Exception:
+                    pass
 
-        try:
-            with open(filepath) as f:
-                data = json.load(f)
-            pages = data.get("pages", [])
-            return len(self.get_assignable_page_indices(filename, pages))
-        except Exception:
-            return 0
+            src_images = src_root / task / "images"
+            for key in keys:
+                src_img = src_images / key
+                if src_img.exists():
+                    shutil.move(str(src_img), dest_images / key)
+                dest_labels[key] = src_labels[key]
+                del src_labels[key]
 
-    def get_available_files(self) -> list[str]:
-        """Get list of available JSON files in matched-ocr."""
-        if not MATCHED_OCR_DIR.exists():
-            return []
+            if task == "detection":
+                moved += len(keys)
 
-        visible_files = []
-        for candidate in sorted(MATCHED_OCR_DIR.glob("*.json")):
-            if self.get_assignable_page_count_for_file(candidate.name) > 0:
-                visible_files.append(candidate.name)
-        return visible_files
+            with open(src_lp, "w") as f:
+                json.dump(src_labels, f, indent=2)
+            with open(dest_lp, "w") as f:
+                json.dump(dest_labels, f, indent=2)
 
-    def get_page_count(self, filename: str) -> int:
-        """Get number of pages in a file."""
-        if filename in self.assignments:
-            return len(self.assignments[filename])
-        return 0
+        return moved
 
-    def assign_page(self, filename: str, page_index: int, target: str):
-        """Assign a page to train, val, or None."""
-        if filename in self.assignments:
-            self.assignments[filename][page_index] = target if target in {"train", "val"} else None
+    def save_assignments(
+        self,
+        include_detection: bool = True,
+        include_recognition: bool = True,
+    ) -> dict[str, int]:
+        """Merge assigned DocTR exports into ML_TRAINING_DIR / ML_VALIDATION_DIR."""
+        to_copy = [(k, v) for k, v in self.assignments.items() if v in {"train", "val"}]
+        if not to_copy:
+            return {"copied": 0}
 
-    def update_stats(self):
-        """Update total and assigned page counts."""
-        self.total_pages = sum(len(file_assigns) for file_assigns in self.assignments.values())
-        self.assigned_pages = sum(
-            1
-            for file_assigns in self.assignments.values()
-            for assignment in file_assigns.values()
-            if assignment is not None
-        )
-
-    @staticmethod
-    def project_from_filename(filename: str) -> str:
-        """Extract a project key from a matched-ocr filename."""
-        stem = Path(filename).stem
-        if "_" not in stem:
-            return stem
-        return stem.rsplit("_", 1)[0]
-
-    def get_split_task_pages(self) -> dict:
-        """Group pages by split and project, mirrored for detection/recognition."""
-        split_projects = {
-            "unassigned": defaultdict(list),
-            "train": defaultdict(list),
-            "val": defaultdict(list),
+        task_flags = {
+            "detection": include_detection,
+            "recognition": include_recognition,
         }
+        count = 0
+        for key, split in to_copy:
+            src_root = self.export_path(key)
+            dest_root = ML_TRAINING_DIR if split == "train" else ML_VALIDATION_DIR
+            for task, include in task_flags.items():
+                if not include:
+                    continue
+                src_labels_path = src_root / task / "labels.json"
+                if not src_labels_path.exists():
+                    continue
+                src_images_dir = src_root / task / "images"
+                dest_images_dir = dest_root / task / "images"
+                dest_images_dir.mkdir(parents=True, exist_ok=True)
 
-        for filename, file_assignments in self.assignments.items():
-            if filename not in self.loaded_files:
-                continue
+                src_labels = self._load_json_map(src_labels_path)
+                dest_labels_path = dest_root / task / "labels.json"
+                dest_labels = self._load_json_map(dest_labels_path)
 
-            project_key = self.project_from_filename(filename)
-            for page_index, assignment in file_assignments.items():
-                split_key = assignment if assignment in {"train", "val"} else "unassigned"
-                diff_suffix = " [different]" if self.is_flagged_different(filename, page_index) else ""
-                page_label = f"{Path(filename).stem} · page {page_index + 1}{diff_suffix}"
-                split_projects[split_key][project_key].append(page_label)
+                for img_name in src_labels:
+                    src_img = src_images_dir / img_name
+                    if src_img.exists():
+                        shutil.copy2(src_img, dest_images_dir / img_name)
 
-        split_views = {}
-        for split_key, projects in split_projects.items():
-            ordered_projects = {
-                project: sorted(project_pages)
-                for project, project_pages in sorted(projects.items(), key=lambda item: item[0])
-            }
-            split_views[split_key] = {
-                "detection": {project: list(pages) for project, pages in ordered_projects.items()},
-                "recognition": {project: list(pages) for project, pages in ordered_projects.items()},
-            }
+                dest_labels.update(src_labels)
+                self._write_json_map(dest_labels_path, dest_labels)
+                count += 1
 
-        return split_views
-
-    def export_datasets(self) -> dict:
-        """Export training and validation datasets."""
-        train_pages = []
-        val_pages = []
-
-        for filename, assignments in self.assignments.items():
-            if filename not in self.loaded_files:
-                continue
-
-            data = self.loaded_files[filename]
-            pages = data.get("pages", [])
-
-            for page_index, assignment in assignments.items():
-                if page_index < len(pages):
-                    page = pages[page_index]
-                    page_with_meta = {
-                        "source_file": filename,
-                        "source_path": data.get("source_path"),
-                        **page,
-                    }
-
-                    if assignment == "train":
-                        train_pages.append(page_with_meta)
-                    elif assignment == "val":
-                        val_pages.append(page_with_meta)
-
-        return {"train": train_pages, "val": val_pages}
+        self.scan()
+        return {"copied": count}
 
 
-class TrainingConfig:
-    """Manages training configuration."""
+class DetectionTrainingConfig:
+    """Manages detection fine-tuning configuration."""
 
     def __init__(self):
+        self.enabled = True
+        self.arch = "db_resnet50"
+        self.epochs = 100
+        self.batch_size = 2
+        self.learning_rate = 0.002
+        self.pretrained = True
+        self.model_name = _prefixed_model_name("detection", "model-finetuned")
+        self.device = 0 if torch.cuda.is_available() else None
+
+
+class RecognitionTrainingConfig:
+    """Manages recognition fine-tuning configuration."""
+
+    def __init__(self):
+        self.enabled = True
         self.arch = "crnn_vgg16_bn"
-        self.epochs = 10
+        self.epochs = 100
         self.batch_size = 64
         self.learning_rate = 0.001
         self.weight_decay = 0.0
         self.optimizer = "adam"
         self.scheduler = "cosine"
         self.input_size = 32
+        self.pretrained = True
+        self.model_name = _prefixed_model_name("recognition", "model-finetuned")
         self.amp = False
         self.early_stop = False
         self.early_stop_epochs = 5
-        self.vocab = "french"
+        default_vocab_library = [name for name in NOTEBOOK_DEFAULT_VOCAB_LIBRARY if name in VOCABS]
+        if not default_vocab_library:
+            default_vocab_library = ["french"] if "french" in VOCABS else [next(iter(VOCABS))]
+        self.vocab_library = default_vocab_library
+        self.custom_characters = NOTEBOOK_DEFAULT_CUSTOM_CHARACTERS
+        self.vocab = build_custom_vocab_arg(self.vocab_library, self.custom_characters)
         self.workers = 4
-        self.device = 0 if torch.cuda.is_available() else -1
+        self.device = 0 if torch.cuda.is_available() else None
+
+    # Global state
+    migrate_existing_model_artifacts()
+    _model_output_dir(BASE_OCR_PROFILE, "detection").mkdir(parents=True, exist_ok=True)
+    _model_output_dir(BASE_OCR_PROFILE, "recognition").mkdir(parents=True, exist_ok=True)
 
 
-# Global state
-dataset_manager = DatasetManager()
-training_config = TrainingConfig()
+export_manager = ExportManager()
+detection_config = DetectionTrainingConfig()
+recognition_config = RecognitionTrainingConfig()
 training_thread: threading.Thread | None = None
 training_cancelled = False
 
@@ -648,161 +507,396 @@ def create_ui():
     with ui.header().classes("w-full bg-blue-500 text-white"):
         ui.label("OCR Training Suite").classes("text-2xl font-bold")
 
-    with ui.row().classes("w-full"):
+    with ui.column().classes("w-full"):
         # ==================== DATASET SECTION ====================
-        with ui.card().classes("flex-1"):
+        with ui.card().classes("w-full"):
             ui.label("📂 Dataset Management").classes("text-lg font-bold")
+            ui.label(
+                "Auto-populated from the ocr-labeler DocTR export root. "
+                "Yellow items are already present in the training/validation datasets. "
+                "Drag project rows or individual subfolder chips between columns. "
+                "For on-disk pages: click to select, Ctrl/Cmd-click to toggle, Shift-click for range."
+            ).classes("text-xs text-gray-500 mb-2")
 
-            # Available files browser
-            with ui.card().classes("w-full"):
-                ui.label("Available JSON Files (non-overlapping)").classes("font-semibold")
+            copy_detection = {"value": True}
+            copy_recognition = {"value": True}
 
-                async def load_file(filename: str):
-                    try:
-                        filepath = MATCHED_OCR_DIR / filename
-                        dataset_manager.load_json_file(filepath)
-                        page_count = dataset_manager.get_page_count(filename)
-                        diff_count = sum(
-                            1
-                            for idx in dataset_manager.assignments.get(filename, {})
-                            if dataset_manager.is_flagged_different(filename, idx)
-                        )
-
-                        if page_count == 0:
-                            files_label.set_text(
-                                f"↷ Skipped: {filename} (all pages already exist in ml-training/ml-validation)"
-                            )
-                        elif diff_count:
-                            files_label.set_text(
-                                f"✓ Loaded: {filename} ({page_count} assignable pages, {diff_count} different/newer)"
-                            )
-                        else:
-                            files_label.set_text(f"✓ Loaded: {filename} ({page_count} assignable pages)")
-                        refresh_page_grid()
-                        update_stats()
-                    except Exception as e:
-                        files_label.set_text(f"✗ Error: {e}")
-
-                files_label = ui.label("Select file to load...")
-                file_buttons_container = ui.row()
-
-                def refresh_available_file_buttons():
-                    file_buttons_container.clear()
-                    available_files = dataset_manager.get_available_files()
-                    with file_buttons_container:
-                        if not available_files:
-                            ui.label("No assignable matched-ocr files").classes("text-xs text-gray-500")
-                            return
-                        for fname in available_files[:10]:  # Show first 10
-                            ui.button(
-                                fname[:20] + "..." if len(fname) > 20 else fname,
-                                on_click=lambda f=fname: load_file(f),
-                            ).props("size=sm").tooltip(fname)
-
-            # Page assignment grid
-            ui.label("Assign Pages to Sets").classes("font-semibold mt-4")
-
-            page_container = ui.column().classes("w-full border-l-4 border-blue-300 pl-4")
-            ui.label("Set Views (project accordion)").classes("font-semibold mt-4")
-            split_view_container = ui.column().classes("w-full border-l-4 border-emerald-300 pl-4")
-
-            def render_split_view(split_title: str, projects_by_task: dict):
-                with split_view_container:
-                    ui.label(split_title).classes("font-semibold text-sm mt-2")
-                    with ui.row().classes("w-full gap-4"):
-                        for task_name in ("detection", "recognition"):
-                            with ui.card().classes("flex-1"):
-                                task_projects = projects_by_task.get(task_name, {})
-                                ui.label(task_name).classes("font-medium text-sm")
-
-                                if not task_projects:
-                                    ui.label("No pages").classes("text-xs text-gray-500")
-                                    continue
-
-                                for project_key, page_labels in task_projects.items():
-                                    with ui.expansion(f"{project_key} ({len(page_labels)} pages)").classes("w-full"):
-                                        for page_label in page_labels:
-                                            ui.label(page_label).classes("text-xs text-gray-600")
-
-            def refresh_page_grid():
-                page_container.clear()
-                split_view_container.clear()
-
-                for filename, assignments in dataset_manager.assignments.items():
-                    if filename not in dataset_manager.loaded_files:
-                        continue
-                    if not assignments:
-                        continue
-
-                    with page_container:
-                        ui.label(f"📄 {filename}").classes("font-semibold text-sm mt-2")
-
-                        with ui.row().classes("flex-wrap gap-2"):
-                            for page_idx in assignments:
-                                current = assignments[page_idx]
-
-                                ui.select(
-                                    options=["unassigned", "train", "val"],
-                                    value=current or "unassigned",
-                                    on_change=lambda v, f=filename, p=page_idx: (
-                                        dataset_manager.assign_page(f, p, v.value),
-                                        refresh_page_grid(),
-                                        update_stats(),
-                                    ),
-                                ).props("size=sm dense").classes("w-24")
-
-                                if dataset_manager.is_flagged_different(filename, page_idx):
-                                    ui.label("different/newer").classes("text-xs text-amber-700")
-
-                split_task_pages = dataset_manager.get_combined_split_task_pages()
-                render_split_view("ml-training", split_task_pages["train"])
-                render_split_view("ml-validation", split_task_pages["val"])
-                render_split_view("unassigned", split_task_pages["unassigned"])
-
-            # Stats
-            stats_label = ui.label("No data loaded").classes("text-sm text-gray-600 mt-4")
-
-            def update_stats():
-                dataset_manager.update_stats()
-                stats_label.set_text(
-                    f"📊 Total pages: {dataset_manager.total_pages} | Assigned: {dataset_manager.assigned_pages}"
+            with ui.row().classes("items-center gap-6 mb-3"):
+                ui.checkbox(
+                    text="Include detection dataset",
+                    value=True,
+                    on_change=lambda v: copy_detection.__setitem__("value", bool(v.value)),
+                )
+                ui.checkbox(
+                    text="Include recognition dataset",
+                    value=True,
+                    on_change=lambda v: copy_recognition.__setitem__("value", bool(v.value)),
                 )
 
-            def save_assignments():
-                try:
-                    result = dataset_manager.save_assignments()
-                    saved_pages = result.get("saved_pages", 0)
-                    removed_files = result.get("removed_files", 0)
-                    if saved_pages == 0:
-                        ui.notify("No assigned pages to save.", type="warning")
+            kanban_status = ui.label("").classes("text-xs text-gray-600")
+            dragging: dict = {"type": None, "key": None}
+            col_containers: dict = {}
+            selected_existing_pages: set[tuple[str, str]] = set()
+            page_selection_anchor: dict[str, str] = {}
+
+            def _select_existing_page(
+                event,
+                split_col: str,
+                project_id: str,
+                page_name: str,
+                ordered_pages: list[str],
+            ) -> None:
+                args = event.args if hasattr(event, "args") and isinstance(event.args, dict) else {}
+                shift_pressed = bool(args.get("shiftKey"))
+                toggle_pressed = bool(args.get("ctrlKey") or args.get("metaKey"))
+                key = (split_col, page_name)
+                scope_key = f"{split_col}:{project_id}"
+
+                if shift_pressed and page_selection_anchor.get(scope_key) in ordered_pages:
+                    start = ordered_pages.index(page_selection_anchor[scope_key])
+                    end = ordered_pages.index(page_name)
+                    if start > end:
+                        start, end = end, start
+                    range_keys = {(split_col, p) for p in ordered_pages[start : end + 1]}
+                    if toggle_pressed:
+                        selected_existing_pages.update(range_keys)
+                    else:
+                        selected_existing_pages.difference_update(
+                            {selected for selected in selected_existing_pages if selected[0] == split_col}
+                        )
+                        selected_existing_pages.update(range_keys)
+                elif toggle_pressed:
+                    if key in selected_existing_pages:
+                        selected_existing_pages.remove(key)
+                    else:
+                        selected_existing_pages.add(key)
+                else:
+                    selected_existing_pages.clear()
+                    selected_existing_pages.add(key)
+
+                page_selection_anchor[scope_key] = page_name
+                refresh_kanban()
+
+            def handle_drop(target: str) -> None:
+                dtype = dragging.get("type")
+                key = dragging.get("key")
+                if dtype == "export" and isinstance(key, str):
+                    export_manager.assign(key, target)
+                elif dtype == "project" and isinstance(key, str):
+                    export_manager.assign_project(key, target)
+                elif dtype == "existing" and isinstance(key, str):
+                    from_split = dragging.get("from_split")
+                    if isinstance(from_split, str) and from_split != target and target in ("train", "val"):
+                        export_manager.move_existing_project(key, from_split, target)
+                elif dtype == "existing_page" and isinstance(key, str):
+                    from_split = dragging.get("from_split")
+                    if isinstance(from_split, str) and from_split != target and target in ("train", "val"):
+                        export_manager.move_existing_page(key, from_split, target)
+                elif dtype == "existing_page" and isinstance(key, list):
+                    from_split = dragging.get("from_split")
+                    if isinstance(from_split, str) and from_split != target and target in ("train", "val"):
+                        for page_name in key:
+                            if isinstance(page_name, str):
+                                export_manager.move_existing_page(page_name, from_split, target)
+                        selected_existing_pages.difference_update(
+                            {selected for selected in selected_existing_pages if selected[0] == from_split}
+                        )
+                dragging["type"] = None
+                dragging["key"] = None
+                dragging["from_split"] = None
+                refresh_kanban()
+
+            def render_column(col_id: str, container) -> None:
+                container.clear()
+                by_split = export_manager.get_by_split()
+                pending_projects = dict(sorted(by_split.get(col_id, {}).items()))
+
+                # Existing data already in ml-training / ml-validation.
+                existing_projects: dict[str, int] = {}
+                if col_id == "train":
+                    existing_projects = export_manager.get_existing_projects(ML_TRAINING_DIR)
+                elif col_id == "val":
+                    existing_projects = export_manager.get_existing_projects(ML_VALIDATION_DIR)
+
+                has_content = pending_projects or existing_projects
+                with container:
+                    if not has_content:
+                        ui.label("(empty — drop items here)").classes("text-xs text-gray-400 italic p-2")
                         return
 
-                    files_label.set_text(
-                        f"💾 Saved {saved_pages} pages to combined labels; removed {removed_files} fully-consumed matched files"
-                    )
-                    refresh_available_file_buttons()
-                    refresh_page_grid()
-                    update_stats()
-                    ui.notify("Assignments saved.", type="positive")
-                except Exception as e:
-                    ui.notify(str(e), type="negative")
-                    files_label.set_text(f"✗ Save failed: {e}")
+                    # --- Pending (from labeler export root) ---
+                    for project_id, keys in pending_projects.items():
+                        with ui.card().classes("w-full p-1 mb-1"):
+                            with ui.row().classes("items-center gap-1 w-full cursor-grab") as proj_row:
+                                proj_row.props("draggable=true")
+                                proj_row.on(
+                                    "dragstart",
+                                    lambda e, p=project_id: (
+                                        dragging.__setitem__("type", "project"),
+                                        dragging.__setitem__("key", p),
+                                    ),
+                                )
+                                ui.icon("folder").classes("text-sm text-gray-500")
+                                ui.label(project_id).classes("text-xs font-semibold flex-1 truncate")
+                                ui.label(f"({len(keys)})").classes("text-xs text-gray-400")
+                            with ui.row().classes("flex-wrap gap-1 pl-2 pt-1"):
+                                for key in sorted(keys):
+                                    subfolder = key.split("/", 1)[1]
+                                    changed = export_manager.is_changed(key)
+                                    base_cls = "cursor-grab rounded px-2 py-0.5 text-xs border "
+                                    color_cls = (
+                                        "bg-yellow-100 border-yellow-400 text-yellow-800"
+                                        if changed
+                                        else "bg-slate-100 border-slate-300 text-slate-600"
+                                    )
+                                    chip = ui.label(subfolder).classes(base_cls + color_cls)
+                                    chip.props("draggable=true")
+                                    chip.on(
+                                        "dragstart",
+                                        lambda e, k=key: (
+                                            dragging.__setitem__("type", "export"),
+                                            dragging.__setitem__("key", k),
+                                        ),
+                                    )
 
-            with ui.row().classes("mt-3"):
-                ui.button("💾 Save Assignments", on_click=save_assignments).props("color=primary")
+                    # --- Already present in ml-training / ml-validation ---
+                    if existing_projects:
+                        if col_id in ("train", "val") and pending_projects:
+                            ui.separator()
+                        for project_id, page_count in existing_projects.items():
+                            pages = export_manager.get_existing_pages(
+                                ML_TRAINING_DIR if col_id == "train" else ML_VALIDATION_DIR,
+                                project_id,
+                            )
+                            exp_label = f"{project_id}  ·  {page_count} pages  [on disk]"
+                            with ui.expansion(exp_label).classes(
+                                "w-full mb-1 bg-slate-50 border border-slate-200 rounded"
+                            ) as exp_card:
+                                exp_card.props("draggable=true dense")
+                                exp_card.on(
+                                    "dragstart",
+                                    lambda e, p=project_id, s=col_id: (
+                                        dragging.__setitem__("type", "existing"),
+                                        dragging.__setitem__("key", p),
+                                        dragging.__setitem__("from_split", s),
+                                    ),
+                                )
+                                with ui.column().classes("w-full gap-0 pl-2"):
+                                    for img_name in pages:
+                                        selected = (col_id, img_name) in selected_existing_pages
+                                        selected_cls = (
+                                            "bg-blue-100 border-blue-400 text-blue-800"
+                                            if selected
+                                            else "bg-white border-slate-200 text-slate-600"
+                                        )
+                                        with ui.card().classes(
+                                            "w-full mb-1 px-2 py-1 border rounded shadow-none cursor-grab "
+                                            + selected_cls
+                                        ) as page_row:
+                                            page_row.props("draggable=true")
+                                            page_row.on(
+                                                "click",
+                                                lambda e, p=img_name, s=col_id, pr=project_id, ordered=pages: (
+                                                    _select_existing_page(e, s, pr, p, ordered)
+                                                ),
+                                            )
+                                            page_row.on(
+                                                "dragstart",
+                                                lambda e, p=img_name, s=col_id: (
+                                                    dragging.__setitem__("type", "existing_page"),
+                                                    dragging.__setitem__(
+                                                        "key",
+                                                        sorted(
+                                                            [
+                                                                name
+                                                                for split, name in selected_existing_pages
+                                                                if split == s
+                                                            ]
+                                                        )
+                                                        if (s, p) in selected_existing_pages
+                                                        and any(split == s for split, _ in selected_existing_pages)
+                                                        else p,
+                                                    ),
+                                                    dragging.__setitem__("from_split", s),
+                                                ),
+                                            )
+                                            ui.label(img_name).classes("text-xs font-mono")
 
-            refresh_available_file_buttons()
-            refresh_page_grid()
-            update_stats()
+            def refresh_kanban() -> None:
+                for col_id, container in col_containers.items():
+                    render_column(col_id, container)
+
+            COLUMN_DEFS = [
+                ("unassigned", "📋 Unassigned", "border-gray-300"),
+                ("train", "🔵 Training", "border-blue-400"),
+                ("val", "🟢 Validation", "border-teal-400"),
+            ]
+
+            with ui.row().classes("w-full gap-4"):
+                for col_id, col_title, col_border_cls in COLUMN_DEFS:
+                    with ui.card().classes(f"flex-1 min-h-40 border-2 {col_border_cls}"):
+                        with ui.row().classes("items-center justify-between w-full mb-1"):
+                            ui.label(col_title).classes("font-semibold text-sm")
+                            if col_id != "unassigned":
+
+                                def _make_clear(t: str):
+                                    def _clear():
+                                        for k in list(export_manager.assignments):
+                                            if export_manager.assignments.get(k) == t:
+                                                export_manager.assign(k, None)
+                                        refresh_kanban()
+
+                                    return _clear
+
+                                ui.button("Clear", on_click=_make_clear(col_id)).props("size=xs color=negative flat")
+                        drop_area = ui.column().classes("w-full gap-1 min-h-16")
+                        col_containers[col_id] = drop_area
+                        drop_area.on("dragover.prevent", lambda e: None)
+                        drop_area.on("drop", lambda e, t=col_id: handle_drop(t))
+
+            with ui.row().classes("items-center gap-4 mt-3"):
+                ui.button(
+                    "🔄 Refresh",
+                    on_click=lambda: (
+                        export_manager.scan(),
+                        refresh_kanban(),
+                        kanban_status.set_text("Refreshed exports from labeler."),
+                    ),
+                ).props("color=secondary")
+
+                def save_assignments() -> None:
+                    try:
+                        result = export_manager.save_assignments(
+                            include_detection=copy_detection["value"],
+                            include_recognition=copy_recognition["value"],
+                        )
+                        count = result.get("copied", 0)
+                        if count == 0:
+                            ui.notify("No assigned exports to copy.", type="warning")
+                            return
+                        refresh_kanban()
+                        kanban_status.set_text(
+                            f"💾 Copied {count} export task(s) to ml-training / ml-validation datasets."
+                        )
+                        ui.notify("Assignments saved.", type="positive")
+                    except Exception as e:
+                        ui.notify(str(e), type="negative")
+
+                ui.button("💾 Copy to Datasets", on_click=save_assignments).props("color=primary")
+
+            refresh_kanban()
 
         # ==================== TRAINING CONFIG SECTION ====================
-        with ui.card().classes("flex-1"):
-            ui.label("⚙️ Training Configuration").classes("text-lg font-bold")
+        model_profile_state = {"value": BASE_OCR_PROFILE}
+        output_labels: dict[str, object] = {}
+        with ui.card().classes("w-full"):
+            ui.label("🎯 Model Profile").classes("font-semibold")
+            profile_options = get_available_model_profiles()
+            if model_profile_state["value"] not in profile_options:
+                profile_options = [model_profile_state["value"], *profile_options]
 
-            with ui.tabs().classes("w-full"):
-                with ui.tab_panel("Basic"):
-                    ui.label("Model & Data").classes("font-semibold text-sm")
+            def refresh_model_output_labels() -> None:
+                profile = _normalize_profile_name(model_profile_state["value"])
+                det_label = output_labels.get("detection")
+                rec_label = output_labels.get("recognition")
+                if det_label is not None:
+                    det_label.set_text(f"Detection output root: {_model_output_dir(profile, 'detection')}")
+                if rec_label is not None:
+                    rec_label.set_text(f"Recognition output root: {_model_output_dir(profile, 'recognition')}")
 
+            ui.select(
+                label="Training profile",
+                options=profile_options,
+                value=model_profile_state["value"],
+                on_change=lambda v: (
+                    model_profile_state.__setitem__("value", _normalize_profile_name(str(v.value))),
+                    refresh_model_output_labels(),
+                ),
+            ).classes("w-64")
+
+            ui.label(
+                "Use base-ocr for all-word training. Create/select style-specific profiles (e.g. italics)"
+                " to keep model artifacts separated."
+            ).classes("text-xs text-gray-500")
+
+            refresh_model_output_labels()
+
+        with ui.row().classes("w-full gap-4 items-start"):
+            with ui.card().classes("flex-1"):
+                with ui.row().classes("w-full items-center justify-between"):
+                    with ui.row().classes("items-center gap-2"):
+                        ui.icon("settings")
+                        ui.label("Detection Configuration").classes("font-semibold")
+                    ui.button(
+                        "Start Detection Training",
+                        on_click=lambda: run_training("detection"),
+                    ).props("color=green")
+
+                ui.label("Notebook-aligned detection fine-tune settings").classes("font-semibold text-sm")
+                output_labels["detection"] = ui.label("").classes("text-xs text-gray-600")
+                refresh_model_output_labels()
+
+                with ui.expansion("Configuration", icon="tune").classes("w-full"):
+                    ui.select(
+                        label="Architecture",
+                        options=["db_resnet50"],
+                        value=detection_config.arch,
+                        on_change=lambda v: setattr(detection_config, "arch", v.value),
+                    ).classes("w-full")
+
+                    ui.number(
+                        label="Epochs",
+                        value=detection_config.epochs,
+                        min=1,
+                        max=300,
+                        on_change=lambda v: setattr(detection_config, "epochs", int(v.value)),
+                    ).classes("w-full")
+
+                    ui.number(
+                        label="Batch Size",
+                        value=detection_config.batch_size,
+                        min=1,
+                        max=64,
+                        on_change=lambda v: setattr(detection_config, "batch_size", int(v.value)),
+                    ).classes("w-full")
+
+                    ui.number(
+                        label="Learning Rate",
+                        value=detection_config.learning_rate,
+                        min=0.00001,
+                        max=0.1,
+                        step=0.0001,
+                        format="%.5f",
+                        on_change=lambda v: setattr(detection_config, "learning_rate", float(v.value)),
+                    ).classes("w-full")
+
+                    ui.checkbox(
+                        text="Use Pretrained Weights",
+                        value=detection_config.pretrained,
+                        on_change=lambda v: setattr(detection_config, "pretrained", v.value),
+                    ).classes("w-full")
+
+                    ui.input(
+                        label="Model Name",
+                        value=detection_config.model_name,
+                        on_change=lambda v: setattr(detection_config, "model_name", v.value),
+                    ).classes("w-full")
+
+            with ui.card().classes("flex-1"):
+                with ui.row().classes("w-full items-center justify-between"):
+                    with ui.row().classes("items-center gap-2"):
+                        ui.icon("settings")
+                        ui.label("Recognition Configuration").classes("font-semibold")
+                    ui.button(
+                        "Start Recognition Training",
+                        on_click=lambda: run_training("recognition"),
+                    ).props("color=green")
+
+                ui.label("Notebook-aligned recognition fine-tune settings").classes("font-semibold text-sm")
+                output_labels["recognition"] = ui.label("").classes("text-xs text-gray-600")
+                refresh_model_output_labels()
+
+                with ui.expansion("Configuration", icon="tune").classes("w-full"):
                     ui.select(
                         label="Architecture",
                         options=[
@@ -810,113 +904,163 @@ def create_ui():
                             "crnn_mobilenet_v3_small",
                             "crnn_mobilenet_v3_large",
                         ],
-                        value=training_config.arch,
-                        on_change=lambda v: setattr(training_config, "arch", v.value),
+                        value=recognition_config.arch,
+                        on_change=lambda v: setattr(recognition_config, "arch", v.value),
                     ).classes("w-full")
 
                     ui.number(
                         label="Epochs",
-                        value=training_config.epochs,
+                        value=recognition_config.epochs,
                         min=1,
-                        max=100,
-                        on_change=lambda v: setattr(training_config, "epochs", v.value),
+                        max=300,
+                        on_change=lambda v: setattr(recognition_config, "epochs", int(v.value)),
                     ).classes("w-full")
 
                     ui.number(
                         label="Batch Size",
-                        value=training_config.batch_size,
+                        value=recognition_config.batch_size,
                         min=1,
                         max=512,
-                        on_change=lambda v: setattr(training_config, "batch_size", int(v.value)),
-                    ).classes("w-full")
-
-                    ui.select(
-                        label="Vocabulary",
-                        options=["french", "english", "digits"],
-                        value=training_config.vocab,
-                        on_change=lambda v: setattr(training_config, "vocab", v.value),
-                    ).classes("w-full")
-
-                with ui.tab_panel("Optimizer"):
-                    ui.label("Optimizer & Learning Rate").classes("font-semibold text-sm")
-
-                    ui.select(
-                        label="Optimizer",
-                        options=["adam", "adamw"],
-                        value=training_config.optimizer,
-                        on_change=lambda v: setattr(training_config, "optimizer", v.value),
+                        on_change=lambda v: setattr(recognition_config, "batch_size", int(v.value)),
                     ).classes("w-full")
 
                     ui.number(
                         label="Learning Rate",
-                        value=training_config.learning_rate,
+                        value=recognition_config.learning_rate,
                         min=0.00001,
                         max=0.1,
                         step=0.0001,
                         format="%.5f",
-                        on_change=lambda v: setattr(training_config, "learning_rate", v.value),
+                        on_change=lambda v: setattr(recognition_config, "learning_rate", float(v.value)),
                     ).classes("w-full")
 
                     ui.number(
                         label="Weight Decay",
-                        value=training_config.weight_decay,
+                        value=recognition_config.weight_decay,
                         min=0,
                         max=0.1,
                         step=0.001,
                         format="%.4f",
-                        on_change=lambda v: setattr(training_config, "weight_decay", v.value),
+                        on_change=lambda v: setattr(recognition_config, "weight_decay", float(v.value)),
+                    ).classes("w-full")
+
+                    ui.select(
+                        label="Optimizer",
+                        options=["adam", "adamw"],
+                        value=recognition_config.optimizer,
+                        on_change=lambda v: setattr(recognition_config, "optimizer", v.value),
                     ).classes("w-full")
 
                     ui.select(
                         label="Scheduler",
                         options=["cosine", "onecycle", "poly"],
-                        value=training_config.scheduler,
-                        on_change=lambda v: setattr(training_config, "scheduler", v.value),
+                        value=recognition_config.scheduler,
+                        on_change=lambda v: setattr(recognition_config, "scheduler", v.value),
                     ).classes("w-full")
-
-                with ui.tab_panel("Advanced"):
-                    ui.label("Advanced Options").classes("font-semibold text-sm")
 
                     ui.number(
                         label="Input Height",
-                        value=training_config.input_size,
+                        value=recognition_config.input_size,
                         min=16,
                         max=64,
                         step=4,
-                        on_change=lambda v: setattr(training_config, "input_size", int(v.value)),
+                        on_change=lambda v: setattr(recognition_config, "input_size", int(v.value)),
                     ).classes("w-full")
 
                     ui.number(
                         label="Workers",
-                        value=training_config.workers,
+                        value=recognition_config.workers,
                         min=0,
                         max=16,
-                        on_change=lambda v: setattr(training_config, "workers", int(v.value)),
+                        on_change=lambda v: setattr(recognition_config, "workers", int(v.value)),
+                    ).classes("w-full")
+
+                    ui.checkbox(
+                        text="Use Pretrained Weights",
+                        value=recognition_config.pretrained,
+                        on_change=lambda v: setattr(recognition_config, "pretrained", v.value),
                     ).classes("w-full")
 
                     ui.checkbox(
                         text="Mixed Precision (AMP)",
-                        value=training_config.amp,
-                        on_change=lambda v: setattr(training_config, "amp", v.value),
+                        value=recognition_config.amp,
+                        on_change=lambda v: setattr(recognition_config, "amp", v.value),
                     ).classes("w-full")
 
                     ui.checkbox(
                         text="Early Stopping",
-                        value=training_config.early_stop,
-                        on_change=lambda v: setattr(training_config, "early_stop", v.value),
+                        value=recognition_config.early_stop,
+                        on_change=lambda v: setattr(recognition_config, "early_stop", v.value),
                     ).classes("w-full")
 
                     ui.number(
                         label="Early Stop Patience",
-                        value=training_config.early_stop_epochs,
+                        value=recognition_config.early_stop_epochs,
                         min=1,
                         max=20,
-                        on_change=lambda v: setattr(training_config, "early_stop_epochs", int(v.value)),
+                        on_change=lambda v: setattr(recognition_config, "early_stop_epochs", int(v.value)),
                     ).classes("w-full")
 
-    # ==================== TRAINING CONTROL SECTION ====================
+                    ui.input(
+                        label="Model Name",
+                        value=recognition_config.model_name,
+                        on_change=lambda v: setattr(recognition_config, "model_name", v.value),
+                    ).classes("w-full")
+
+                    vocab_tags_row = ui.row().classes("w-full flex-wrap gap-2")
+                    vocab_preview_label = ui.label("").classes("text-xs text-gray-600")
+
+                    def refresh_vocab_ui():
+                        recognition_config.vocab = build_custom_vocab_arg(
+                            recognition_config.vocab_library,
+                            recognition_config.custom_characters,
+                        )
+                        vocab_preview_label.set_text(
+                            "Resolved as CUSTOM vocab. Note: custom vocab is deduplicated and sorted by the trainer."
+                        )
+                        vocab_tags_row.clear()
+                        with vocab_tags_row:
+                            for selected_vocab in recognition_config.vocab_library:
+                                ui.badge(selected_vocab).props("outline")
+
+                    ui.select(
+                        label="Vocab Library (shown as tags)",
+                        options=sorted(VOCABS.keys()),
+                        value=recognition_config.vocab_library,
+                        multiple=True,
+                        on_change=lambda v: (
+                            setattr(recognition_config, "vocab_library", list(v.value or [])),
+                            refresh_vocab_ui(),
+                        ),
+                    ).props("use-chips").classes("w-full")
+
+                    ui.input(
+                        label="Custom Characters",
+                        value=recognition_config.custom_characters,
+                        on_change=lambda v: (
+                            setattr(recognition_config, "custom_characters", v.value or ""),
+                            refresh_vocab_ui(),
+                        ),
+                    ).classes("w-full")
+
+                    ui.button(
+                        "Reset to Notebook Vocab Preset",
+                        on_click=lambda: (
+                            setattr(
+                                recognition_config,
+                                "vocab_library",
+                                [name for name in NOTEBOOK_DEFAULT_VOCAB_LIBRARY if name in VOCABS],
+                            ),
+                            setattr(recognition_config, "custom_characters", NOTEBOOK_DEFAULT_CUSTOM_CHARACTERS),
+                            refresh_vocab_ui(),
+                        ),
+                    ).props("color=secondary")
+
+                    refresh_vocab_ui()
+
+    # ==================== TRAINING OUTPUT SECTION ====================
     with ui.card().classes("w-full"):
-        ui.label("🚀 Training Control").classes("text-lg font-bold")
+        ui.label("🧾 Training Output").classes("text-lg font-bold")
 
         status_label = ui.label("Ready").classes("text-sm text-gray-600")
         output_area = (
@@ -927,16 +1071,16 @@ def create_ui():
             .classes("w-full h-64")
         )
 
-        def run_training():
-            """Run training in background thread."""
+        def run_training(mode: str):
+            """Run detection or recognition training in a background thread."""
             global training_thread, training_cancelled
 
             if training_thread and training_thread.is_alive():
                 ui.notify("Training is already running!", type="warning")
                 return
 
-            def recognition_label_count(split_root: Path) -> int:
-                labels_path = split_root / "recognition" / "labels.json"
+            def label_count(split_root: Path, task: str) -> int:
+                labels_path = split_root / task / "labels.json"
                 if not labels_path.exists():
                     return 0
                 try:
@@ -947,64 +1091,115 @@ def create_ui():
                     return 0
 
             try:
-                # Persist any pending selections before training.
-                pending_assignments = any(
-                    assignment in {"train", "val"}
-                    for file_assignments in dataset_manager.assignments.values()
-                    for assignment in file_assignments.values()
-                )
-                if pending_assignments:
-                    save_result = dataset_manager.save_assignments()
-                    refresh_available_file_buttons()
-                    refresh_page_grid()
-                    update_stats()
+                run_detection = mode == "detection"
+                run_recognition = mode == "recognition"
+                selected_profile = _normalize_profile_name(model_profile_state["value"])
+                detection_out_dir = _model_output_dir(selected_profile, "detection")
+                recognition_out_dir = _model_output_dir(selected_profile, "recognition")
+                detection_out_dir.mkdir(parents=True, exist_ok=True)
+                recognition_out_dir.mkdir(parents=True, exist_ok=True)
+
+                # Auto-save any pending export assignments before training.
+                pending = any(v in {"train", "val"} for v in export_manager.assignments.values())
+                if pending:
+                    save_result = export_manager.save_assignments(
+                        include_detection=copy_detection["value"],
+                        include_recognition=copy_recognition["value"],
+                    )
+                    refresh_kanban()
                     ui.notify(
-                        f"Auto-saved {save_result.get('saved_pages', 0)} assigned pages before training.",
+                        f"Auto-copied {save_result.get('copied', 0)} export task(s) before training.",
                         type="positive",
                     )
 
-                train_count = recognition_label_count(ML_TRAINING_DIR)
-                val_count = recognition_label_count(ML_VALIDATION_DIR)
-                if train_count == 0 or val_count == 0:
-                    ui.notify(
-                        "Please assign and save pages to both training and validation sets!",
-                        type="warning",
+                if run_detection:
+                    detection_config.model_name = _prefixed_model_name(
+                        "detection", detection_config.model_name, selected_profile
                     )
-                    return
+                    det_train_count = label_count(ML_TRAINING_DIR, "detection")
+                    det_val_count = label_count(ML_VALIDATION_DIR, "detection")
+                    if det_train_count == 0 or det_val_count == 0:
+                        ui.notify(
+                            "Please assign and save pages to both train/val for detection before training.",
+                            type="warning",
+                        )
+                        return
 
-                status_label.set_text("⏳ Training starting...")
-                output_area.value = "Starting training...\n"
+                if run_recognition:
+                    recognition_config.model_name = _prefixed_model_name(
+                        "recognition", recognition_config.model_name, selected_profile
+                    )
+                    rec_train_count = label_count(ML_TRAINING_DIR, "recognition")
+                    rec_val_count = label_count(ML_VALIDATION_DIR, "recognition")
+                    if rec_train_count == 0 or rec_val_count == 0:
+                        ui.notify(
+                            "Please assign and save pages to both train/val for recognition before training.",
+                            type="warning",
+                        )
+                        return
+                    recognition_config.vocab = build_custom_vocab_arg(
+                        recognition_config.vocab_library,
+                        recognition_config.custom_characters,
+                    )
+
+                if run_detection:
+                    status_label.set_text("⏳ Training starting (detection)...")
+                    output_area.value = "Starting training...\n\n[1/1] Detection\n"
+                else:
+                    status_label.set_text("⏳ Training starting (recognition)...")
+                    output_area.value = "Starting training...\n\n[1/1] Recognition\n"
+
                 training_cancelled = False
 
                 def train_worker():
                     global training_thread, training_cancelled
                     try:
-                        # Train against the persisted combined recognition datasets.
-                        train_from_config(
-                            train_path=ML_TRAINING_DIR / "recognition",
-                            val_path=ML_VALIDATION_DIR / "recognition",
-                            arch=training_config.arch,
-                            epochs=training_config.epochs,
-                            batch_size=training_config.batch_size,
-                            lr=training_config.learning_rate,
-                            weight_decay=training_config.weight_decay,
-                            optimizer=training_config.optimizer,
-                            scheduler=training_config.scheduler,
-                            input_size=training_config.input_size,
-                            vocab=training_config.vocab,
-                            workers=training_config.workers,
-                            amp=training_config.amp,
-                            early_stop=training_config.early_stop,
-                            early_stop_epochs=training_config.early_stop_epochs,
-                            early_stop_delta=0.01,
-                            output_dir=str(PROJECT_ROOT),
-                            device=training_config.device,
-                        )
+                        if run_detection:
+                            status_label.set_text("⏳ Running detection fine-tuning...")
+                            detect_from_config(
+                                train_path=ML_TRAINING_DIR / "detection",
+                                val_path=ML_VALIDATION_DIR / "detection",
+                                arch=detection_config.arch,
+                                epochs=detection_config.epochs,
+                                batch_size=detection_config.batch_size,
+                                lr=detection_config.learning_rate,
+                                pretrained=detection_config.pretrained,
+                                output_dir=str(detection_out_dir),
+                                device=detection_config.device,
+                                name=detection_config.model_name,
+                            )
+                            output_area.value += "✅ Detection fine-tuning completed.\n"
+
+                        if run_recognition:
+                            status_label.set_text("⏳ Running recognition fine-tuning...")
+                            train_from_config(
+                                train_path=ML_TRAINING_DIR / "recognition",
+                                val_path=ML_VALIDATION_DIR / "recognition",
+                                arch=recognition_config.arch,
+                                epochs=recognition_config.epochs,
+                                batch_size=recognition_config.batch_size,
+                                lr=recognition_config.learning_rate,
+                                weight_decay=recognition_config.weight_decay,
+                                optimizer=recognition_config.optimizer,
+                                scheduler=recognition_config.scheduler,
+                                input_size=recognition_config.input_size,
+                                vocab=recognition_config.vocab,
+                                workers=recognition_config.workers,
+                                amp=recognition_config.amp,
+                                early_stop=recognition_config.early_stop,
+                                early_stop_epochs=recognition_config.early_stop_epochs,
+                                early_stop_delta=0.01,
+                                output_dir=str(recognition_out_dir),
+                                device=recognition_config.device,
+                                pretrained=recognition_config.pretrained,
+                                name=recognition_config.model_name,
+                            )
+                            output_area.value += "✅ Recognition fine-tuning completed.\n"
 
                         if not training_cancelled:
                             status_label.set_text("✅ Training completed!")
                             ui.notify("Training finished successfully!", type="positive")
-                            output_area.value += "\n\n✅ Training completed successfully!"
+                            output_area.value += "\n✅ Training completed successfully!"
                         else:
                             status_label.set_text("⏹️ Training stopped by user")
 
@@ -1027,7 +1222,6 @@ def create_ui():
             status_label.set_text("⏹️ Stopping training...")
 
         with ui.row():
-            ui.button("▶️ Start Training", on_click=run_training).props("color=green")
             ui.button("⏹️ Stop Training", on_click=stop_training).props("color=red")
             ui.button(
                 "Clear Output",
