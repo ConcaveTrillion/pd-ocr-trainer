@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "train-pgdp-ocr"
+name = "pd-ocr-trainer"
 version = "0.1.0"
 description = "OCR training suite for PGDP documents with NiceGUI interface"
 readme = "README.md"
@@ -72,9 +72,9 @@ all-dev = [
 ]
 
 [project.scripts]
-train-pgdp-ocr-recog = "train_pgdp_ocr.train_recog:main"
-train-pgdp-ocr-detect = "train_pgdp_ocr.train_detect:main"
-train-pgdp-ocr-ui = "train_pgdp_ocr.ui:main"
+pd-ocr-trainer-recog = "pd_ocr_trainer.train_recog:main"
+pd-ocr-trainer-detect = "pd_ocr_trainer.train_detect:main"
+pd-ocr-trainer-ui = "pd_ocr_trainer.ui:main"
 
 [tool.uv.sources]
 pd-book-tools = { git = "https://github.com/ConcaveTrillion/pd-book-tools.git" }
@@ -88,6 +88,7 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --strict-markers"
+pythonpath = ["src"]
 markers = [
     "unit: Unit tests",
     "integration: Integration tests",
@@ -112,6 +113,6 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["train_pgdp_ocr"]
+known-first-party = ["pd_ocr_trainer"]
 
 [tool.ruff.format]

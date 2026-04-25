@@ -110,11 +110,11 @@ build: ## Build distribution packages (wheel and sdist)
 
 run: ## Run the training UI
 	@echo "🚀 Starting OCR Training UI..."
-	uv run train-pgdp-ocr-ui
+	uv run pd-ocr-trainer-ui
 
 run-verbose: ## Run the training UI with verbose output
 	@echo "🚀 Starting OCR Training UI (verbose mode)..."
-	uv run train-pgdp-ocr-ui
+	uv run pd-ocr-trainer-ui
 
 clean: ## Clean up cache, temporary files, and logs (keeps venv and UV cache)
 	@echo "🧹 Cleaning Python cache files..."

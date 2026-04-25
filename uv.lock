@@ -1853,7 +1853,7 @@ wheels = [
 
 [[package]]
 name = "nicegui"
-version = "3.11.0"
+version = "3.11.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiofiles" },
@@ -1882,9 +1882,9 @@ dependencies = [
     { name = "uvicorn", extra = ["standard"] },
     { name = "watchfiles" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/29/51/32defa2f693a75efb7378cc54bc53747e3bb0fbf302e2ba91b134bd19901/nicegui-3.11.0.tar.gz", hash = "sha256:8be951c54cd425956f9e0bdfd808ecf107a12c07af6e53390e9586c05eab2513", size = 19231197, upload-time = "2026-04-24T13:12:18.626Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ec/5f/c03d3d9253c3e67b560749ad344dd74de61bba3c35788a029ad9ad0f7a4f/nicegui-3.11.1.tar.gz", hash = "sha256:d6d176c458a012fff926faf196f6cb3eb86c22203eea4aa335a4d0162291e92c", size = 19231328, upload-time = "2026-04-25T20:00:57.052Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/92/7a/5ba90576eb49cb5dc7d442d6eb7789afb4cfdffed4a8d5bde087b037207a/nicegui-3.11.0-py3-none-any.whl", hash = "sha256:3607d054fd3b0ebc3b83bb3648f08e071375b06d2ea01423a0b9b9e04f887b2b", size = 19801597, upload-time = "2026-04-24T13:12:15.018Z" },
+    { url = "https://files.pythonhosted.org/packages/33/44/350aed50d86abbd192cfc4e4b7bd3d7ba7c50a7cde7dc9e9a7c57f8799a8/nicegui-3.11.1-py3-none-any.whl", hash = "sha256:7e0e63e86dc35ece491aa5dd00a0ff8c28b443b0d58e48b0f425690e1578cc54", size = 19801682, upload-time = "2026-04-25T20:01:01.802Z" },
 ]
 
 [[package]]
@@ -2309,8 +2309,8 @@ wheels = [
 
 [[package]]
 name = "pd-book-tools"
-version = "0.4.3"
-source = { git = "https://github.com/ConcaveTrillion/pd-book-tools.git#d7c811a900562afa4c283c6b9571e011abc2e0a8" }
+version = "0.5.1"
+source = { git = "https://github.com/ConcaveTrillion/pd-book-tools.git#210d797dac9bc308313f25c08ece1bbed98a1f04" }
 dependencies = [
     { name = "cupy-cuda12x" },
     { name = "ipython" },
@@ -2331,6 +2331,128 @@ dependencies = [
     { name = "torch" },
     { name = "torchaudio" },
     { name = "torchvision" },
+]
+
+[[package]]
+name = "pd-ocr-trainer"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "matplotlib" },
+    { name = "nicegui" },
+    { name = "pd-book-tools" },
+    { name = "python-doctr" },
+    { name = "torch" },
+    { name = "torchaudio" },
+    { name = "torchvision" },
+]
+
+[package.optional-dependencies]
+jupyter = [
+    { name = "ipykernel" },
+    { name = "ipywidgets" },
+    { name = "jupyterlab" },
+]
+quality = [
+    { name = "isort" },
+    { name = "pre-commit" },
+    { name = "ruff" },
+]
+test = [
+    { name = "pytest" },
+    { name = "pytest-xdist" },
+]
+
+[package.dev-dependencies]
+all-dev = [
+    { name = "ipykernel" },
+    { name = "ipywidgets" },
+    { name = "isort" },
+    { name = "jupyterlab" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-xdist" },
+    { name = "ruff" },
+]
+dev = [
+    { name = "ipykernel" },
+    { name = "ipywidgets" },
+    { name = "isort" },
+    { name = "jupyterlab" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-xdist" },
+    { name = "ruff" },
+]
+jupyter = [
+    { name = "ipykernel" },
+    { name = "ipywidgets" },
+    { name = "jupyterlab" },
+]
+lint = [
+    { name = "isort" },
+    { name = "pre-commit" },
+    { name = "ruff" },
+]
+test = [
+    { name = "pytest" },
+    { name = "pytest-xdist" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "ipykernel", marker = "extra == 'jupyter'" },
+    { name = "ipywidgets", marker = "extra == 'jupyter'" },
+    { name = "isort", marker = "extra == 'quality'", specifier = ">=6.0" },
+    { name = "jupyterlab", marker = "extra == 'jupyter'", specifier = ">=4.0" },
+    { name = "matplotlib", specifier = ">=3.10.1" },
+    { name = "nicegui", specifier = ">=1.4.0" },
+    { name = "pd-book-tools", git = "https://github.com/ConcaveTrillion/pd-book-tools.git" },
+    { name = "pre-commit", marker = "extra == 'quality'", specifier = ">=4.2.0" },
+    { name = "pytest", marker = "extra == 'test'", specifier = ">=8.3" },
+    { name = "pytest-xdist", marker = "extra == 'test'", specifier = ">=3.0" },
+    { name = "python-doctr", specifier = ">=0.11.1a0" },
+    { name = "ruff", marker = "extra == 'quality'", specifier = ">=0.15.11" },
+    { name = "torch", specifier = ">=2.7.0" },
+    { name = "torchaudio", specifier = ">=2.7.0" },
+    { name = "torchvision", specifier = ">=0.22.0" },
+]
+provides-extras = ["jupyter", "quality", "test"]
+
+[package.metadata.requires-dev]
+all-dev = [
+    { name = "ipykernel" },
+    { name = "ipywidgets" },
+    { name = "isort", specifier = ">=6.0" },
+    { name = "jupyterlab", specifier = ">=4.0" },
+    { name = "pre-commit", specifier = ">=4.2.0" },
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "pytest-xdist", specifier = ">=3.0" },
+    { name = "ruff", specifier = ">=0.15.11" },
+]
+dev = [
+    { name = "ipykernel" },
+    { name = "ipywidgets" },
+    { name = "isort", specifier = ">=6.0" },
+    { name = "jupyterlab", specifier = ">=4.0" },
+    { name = "pre-commit", specifier = ">=4.2.0" },
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "pytest-xdist", specifier = ">=3.0" },
+    { name = "ruff", specifier = ">=0.15.11" },
+]
+jupyter = [
+    { name = "ipykernel" },
+    { name = "ipywidgets" },
+    { name = "jupyterlab", specifier = ">=4.0" },
+]
+lint = [
+    { name = "isort", specifier = ">=6.0" },
+    { name = "pre-commit", specifier = ">=4.2.0" },
+    { name = "ruff", specifier = ">=0.15.11" },
+]
+test = [
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "pytest-xdist", specifier = ">=3.0" },
 ]
 
 [[package]]
@@ -3567,128 +3689,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/09/a9/6ba95a270c6f1fbcd8dac228323f2777d886cb206987444e4bce66338dd4/tqdm-4.67.3.tar.gz", hash = "sha256:7d825f03f89244ef73f1d4ce193cb1774a8179fd96f31d7e1dcde62092b960bb", size = 169598, upload-time = "2026-02-03T17:35:53.048Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/16/e1/3079a9ff9b8e11b846c6ac5c8b5bfb7ff225eee721825310c91b3b50304f/tqdm-4.67.3-py3-none-any.whl", hash = "sha256:ee1e4c0e59148062281c49d80b25b67771a127c85fc9676d3be5f243206826bf", size = 78374, upload-time = "2026-02-03T17:35:50.982Z" },
-]
-
-[[package]]
-name = "train-pgdp-ocr"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "matplotlib" },
-    { name = "nicegui" },
-    { name = "pd-book-tools" },
-    { name = "python-doctr" },
-    { name = "torch" },
-    { name = "torchaudio" },
-    { name = "torchvision" },
-]
-
-[package.optional-dependencies]
-jupyter = [
-    { name = "ipykernel" },
-    { name = "ipywidgets" },
-    { name = "jupyterlab" },
-]
-quality = [
-    { name = "isort" },
-    { name = "pre-commit" },
-    { name = "ruff" },
-]
-test = [
-    { name = "pytest" },
-    { name = "pytest-xdist" },
-]
-
-[package.dev-dependencies]
-all-dev = [
-    { name = "ipykernel" },
-    { name = "ipywidgets" },
-    { name = "isort" },
-    { name = "jupyterlab" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-xdist" },
-    { name = "ruff" },
-]
-dev = [
-    { name = "ipykernel" },
-    { name = "ipywidgets" },
-    { name = "isort" },
-    { name = "jupyterlab" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-xdist" },
-    { name = "ruff" },
-]
-jupyter = [
-    { name = "ipykernel" },
-    { name = "ipywidgets" },
-    { name = "jupyterlab" },
-]
-lint = [
-    { name = "isort" },
-    { name = "pre-commit" },
-    { name = "ruff" },
-]
-test = [
-    { name = "pytest" },
-    { name = "pytest-xdist" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "ipykernel", marker = "extra == 'jupyter'" },
-    { name = "ipywidgets", marker = "extra == 'jupyter'" },
-    { name = "isort", marker = "extra == 'quality'", specifier = ">=6.0" },
-    { name = "jupyterlab", marker = "extra == 'jupyter'", specifier = ">=4.0" },
-    { name = "matplotlib", specifier = ">=3.10.1" },
-    { name = "nicegui", specifier = ">=1.4.0" },
-    { name = "pd-book-tools", git = "https://github.com/ConcaveTrillion/pd-book-tools.git" },
-    { name = "pre-commit", marker = "extra == 'quality'", specifier = ">=4.2.0" },
-    { name = "pytest", marker = "extra == 'test'", specifier = ">=8.3" },
-    { name = "pytest-xdist", marker = "extra == 'test'", specifier = ">=3.0" },
-    { name = "python-doctr", specifier = ">=0.11.1a0" },
-    { name = "ruff", marker = "extra == 'quality'", specifier = ">=0.15.11" },
-    { name = "torch", specifier = ">=2.7.0" },
-    { name = "torchaudio", specifier = ">=2.7.0" },
-    { name = "torchvision", specifier = ">=0.22.0" },
-]
-provides-extras = ["jupyter", "quality", "test"]
-
-[package.metadata.requires-dev]
-all-dev = [
-    { name = "ipykernel" },
-    { name = "ipywidgets" },
-    { name = "isort", specifier = ">=6.0" },
-    { name = "jupyterlab", specifier = ">=4.0" },
-    { name = "pre-commit", specifier = ">=4.2.0" },
-    { name = "pytest", specifier = ">=8.3" },
-    { name = "pytest-xdist", specifier = ">=3.0" },
-    { name = "ruff", specifier = ">=0.15.11" },
-]
-dev = [
-    { name = "ipykernel" },
-    { name = "ipywidgets" },
-    { name = "isort", specifier = ">=6.0" },
-    { name = "jupyterlab", specifier = ">=4.0" },
-    { name = "pre-commit", specifier = ">=4.2.0" },
-    { name = "pytest", specifier = ">=8.3" },
-    { name = "pytest-xdist", specifier = ">=3.0" },
-    { name = "ruff", specifier = ">=0.15.11" },
-]
-jupyter = [
-    { name = "ipykernel" },
-    { name = "ipywidgets" },
-    { name = "jupyterlab", specifier = ">=4.0" },
-]
-lint = [
-    { name = "isort", specifier = ">=6.0" },
-    { name = "pre-commit", specifier = ">=4.2.0" },
-    { name = "ruff", specifier = ">=0.15.11" },
-]
-test = [
-    { name = "pytest", specifier = ">=8.3" },
-    { name = "pytest-xdist", specifier = ">=3.0" },
 ]
 
 [[package]]

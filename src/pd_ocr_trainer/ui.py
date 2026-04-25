@@ -12,16 +12,16 @@ import torch
 from doctr.datasets import VOCABS
 from nicegui import ui
 
-from train_pgdp_ocr.train_detect import detect_from_config
-from train_pgdp_ocr.train_recog import train_from_config
+from pd_ocr_trainer.train_detect import detect_from_config
+from pd_ocr_trainer.train_recog import train_from_config
 
 # Get the project root (parent of src directory)
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 ML_TRAINING_DIR = PROJECT_ROOT / "ml-training"
 ML_VALIDATION_DIR = PROJECT_ROOT / "ml-validation"
-APP_NAME = "pgdp-ocr-labeler"
-MODEL_STORE_DIRNAME = "pgdp-ml-models"
-MODEL_NAME_PREFIX = "pgdp"
+APP_NAME = "pd-ocr-labeler"
+MODEL_STORE_DIRNAME = "pd-ml-models"
+MODEL_NAME_PREFIX = "pd"
 BASE_OCR_PROFILE = "base-ocr"
 
 
@@ -66,38 +66,6 @@ def _profile_model_root(profile: str) -> Path:
 
 def _model_output_dir(profile: str, model_type: str) -> Path:
     return _profile_model_root(profile) / model_type
-
-
-def _move_dir_contents(src: Path, dest: Path) -> None:
-    if not src.exists() or not src.is_dir():
-        return
-    dest.mkdir(parents=True, exist_ok=True)
-    for item in src.iterdir():
-        target = dest / item.name
-        if item.is_dir() and target.exists() and target.is_dir():
-            _move_dir_contents(item, target)
-            item.rmdir()
-        else:
-            if target.exists() and target.is_file():
-                target.unlink()
-            shutil.move(str(item), str(target))
-
-
-def migrate_existing_model_artifacts() -> None:
-    """Move legacy model outputs into pgdp-ml-models/base-ocr/<model-type>."""
-    legacy_roots = [
-        SHARED_MODELS_DIR,
-        APP_DATA_ROOT / MODEL_STORE_DIRNAME,
-        PROJECT_ROOT / "ml-models",
-    ]
-    for model_type in ("detection", "recognition"):
-        destination = _model_output_dir(BASE_OCR_PROFILE, model_type)
-        for legacy_root in legacy_roots:
-            source = legacy_root / model_type
-            if source.exists() and source.resolve() != destination.resolve():
-                _move_dir_contents(source, destination)
-                if source.exists() and source.is_dir() and not any(source.iterdir()):
-                    source.rmdir()
 
 
 def get_available_model_profiles() -> list[str]:
@@ -176,7 +144,7 @@ def _group_existing_by_project(split_root: Path) -> dict[str, list[str]]:
 
 
 class ExportManager:
-    """Manages ocr-labeler DocTR export assignments for training."""
+    """Manages pd-ocr-labeler DocTR export assignments for training."""
 
     def __init__(self) -> None:
         self.assignments: dict[str, str | None] = {}
@@ -185,21 +153,8 @@ class ExportManager:
 
     @staticmethod
     def get_export_root() -> Path:
-        """OS-aware path to the ocr-labeler DocTR export root."""
-        system = platform.system()
-        if system == "Darwin":
-            base = Path.home() / "Library" / "Application Support" / "pgdp-ocr-labeler"
-        elif system == "Windows":
-            appdata = os.environ.get("APPDATA", "")
-            base = (
-                Path(appdata) / "pgdp-ocr-labeler"
-                if appdata
-                else Path.home() / "AppData" / "Roaming" / "pgdp-ocr-labeler"
-            )
-        else:
-            xdg = os.environ.get("XDG_DATA_HOME", "")
-            base = Path(xdg) / "pgdp-ocr-labeler" if xdg else Path.home() / ".local" / "share" / "pgdp-ocr-labeler"
-        return base / "doctr-export"
+        """OS-aware path to the pd-ocr-labeler DocTR export root."""
+        return APP_DATA_ROOT / "doctr-export"
 
     def scan(self) -> None:
         """Scan the export root and rebuild available exports, preserving existing assignments."""
@@ -489,7 +444,6 @@ class RecognitionTrainingConfig:
         self.device = 0 if torch.cuda.is_available() else None
 
     # Global state
-    migrate_existing_model_artifacts()
     _model_output_dir(BASE_OCR_PROFILE, "detection").mkdir(parents=True, exist_ok=True)
     _model_output_dir(BASE_OCR_PROFILE, "recognition").mkdir(parents=True, exist_ok=True)
 
@@ -512,7 +466,7 @@ def create_ui():
         with ui.card().classes("w-full"):
             ui.label("📂 Dataset Management").classes("text-lg font-bold")
             ui.label(
-                "Auto-populated from the ocr-labeler DocTR export root. "
+                "Auto-populated from the pd-ocr-labeler DocTR export root. "
                 "Yellow items are already present in the training/validation datasets. "
                 "Drag project rows or individual subfolder chips between columns. "
                 "For on-disk pages: click to select, Ctrl/Cmd-click to toggle, Shift-click for range."

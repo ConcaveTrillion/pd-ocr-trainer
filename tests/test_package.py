@@ -1,4 +1,4 @@
-from train_pgdp_ocr import __all__, __version__
+from pd_ocr_trainer import __all__, __version__
 
 
 def test_version_is_defined() -> None:

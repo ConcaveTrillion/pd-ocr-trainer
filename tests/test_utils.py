@@ -1,4 +1,4 @@
-from train_pgdp_ocr.utils import EarlyStopper
+from pd_ocr_trainer.utils import EarlyStopper
 
 
 def test_early_stopper_resets_counter_on_improvement() -> None:

@@ -13,7 +13,7 @@ git clone https://github.com/mindee/doctr.git doctr
 cd doctr
 pip install -e .[torch]
 cd ..
-cd train_pgdp_ocr
+cd pd-ocr-trainer
 
 # use pd_book_tools from local install as well
 

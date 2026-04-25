@@ -1,4 +1,4 @@
-"""Run train_pgdp_ocr CLI from command line."""
+"""Run pd_ocr_trainer CLI from command line."""
 
 from .train_recog import main, parse_args
 
