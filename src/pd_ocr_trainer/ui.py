@@ -22,7 +22,8 @@ ML_VALIDATION_DIR = PROJECT_ROOT / "ml-validation"
 APP_NAME = "pd-ocr-labeler"
 MODEL_STORE_DIRNAME = "pd-ml-models"
 MODEL_NAME_PREFIX = "pd"
-BASE_OCR_PROFILE = "base-ocr"
+BASE_OCR_PROFILE = "all"
+LEGACY_BASE_OCR_PROFILE = "base-ocr"
 DATASET_TASKS = ("detection", "recognition")
 
 
@@ -60,7 +61,31 @@ SHARED_MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
 def _normalize_profile_name(name: str) -> str:
     value = (name or "").strip().lower().replace(" ", "-").replace("_", "-")
+    if value == LEGACY_BASE_OCR_PROFILE:
+        return BASE_OCR_PROFILE
     return value or BASE_OCR_PROFILE
+
+
+def _merge_profile_tree(src_root: Path, dest_root: Path) -> None:
+    """Merge one profile tree into another and remove the source when done."""
+    if not src_root.exists() or src_root == dest_root:
+        return
+
+    dest_root.mkdir(parents=True, exist_ok=True)
+
+    for child in src_root.iterdir():
+        target = dest_root / child.name
+        if child.is_dir():
+            if target.exists():
+                _merge_profile_tree(child, target)
+            else:
+                shutil.move(str(child), str(target))
+        else:
+            if target.exists():
+                target.unlink()
+            shutil.move(str(child), str(target))
+
+    shutil.rmtree(src_root, ignore_errors=True)
 
 
 def _profile_model_root(profile: str) -> Path:
@@ -80,7 +105,7 @@ def _split_profile_root(split: str, profile: str = BASE_OCR_PROFILE) -> Path:
 
 
 def _migrate_legacy_dataset_layout() -> None:
-    """Move legacy split/task datasets into the base-ocr profile layout.
+    """Move legacy split/task datasets into the all-profile layout.
 
     Legacy layout:
       ml-training/detection, ml-training/recognition, ...
@@ -123,9 +148,33 @@ def _migrate_legacy_dataset_layout() -> None:
 
             shutil.rmtree(legacy_task_root, ignore_errors=True)
 
+    legacy_profile = LEGACY_BASE_OCR_PROFILE
+    target_profile = _normalize_profile_name(BASE_OCR_PROFILE)
+    if _normalize_profile_name(legacy_profile) == target_profile:
+        for root in (ML_TRAINING_DIR, ML_VALIDATION_DIR, SHARED_MODELS_DIR):
+            legacy_root = root / legacy_profile
+            target_root = root / target_profile
+            if legacy_root.exists() and legacy_root != target_root:
+                _merge_profile_tree(legacy_root, target_root)
+
+
+def _iter_export_profile_dirs(export_root: Path):
+    """Yield export subdirectories that directly contain DocTR task folders."""
+    if not export_root.exists():
+        return
+
+    for project_dir in sorted(export_root.iterdir()):
+        if not project_dir.is_dir():
+            continue
+        for subdir in sorted(project_dir.rglob("*")):
+            if not subdir.is_dir():
+                continue
+            if any((subdir / task / "labels.json").exists() for task in DATASET_TASKS):
+                yield project_dir, subdir
+
 
 def get_available_model_profiles() -> list[str]:
-    """List trainable model profiles derived from export subfolders plus base-ocr."""
+    """List trainable model profiles derived from export subfolders plus all."""
     profiles = {BASE_OCR_PROFILE}
     for split_root in (ML_TRAINING_DIR, ML_VALIDATION_DIR):
         if not split_root.exists():
@@ -140,13 +189,8 @@ def get_available_model_profiles() -> list[str]:
             if profile_dir.is_dir():
                 profiles.add(_normalize_profile_name(profile_dir.name))
     export_root = ExportManager.get_export_root()
-    if export_root.exists():
-        for project_dir in export_root.iterdir():
-            if not project_dir.is_dir():
-                continue
-            for subfolder in project_dir.iterdir():
-                if subfolder.is_dir():
-                    profiles.add(_normalize_profile_name(subfolder.name))
+    for _project_dir, subfolder in _iter_export_profile_dirs(export_root):
+        profiles.add(_normalize_profile_name(subfolder.name))
     return sorted(profiles)
 
 
@@ -245,27 +289,16 @@ class ExportManager:
         new_assignments: dict[str, str | None] = {}
         new_changed: set[str] = set()
 
-        if export_root.exists():
-            for project_dir in sorted(export_root.iterdir()):
-                if not project_dir.is_dir():
-                    continue
-                for subfolder in sorted(project_dir.iterdir()):
-                    if not subfolder.is_dir():
-                        continue
-                    has_detection = (subfolder / "detection" / "labels.json").exists()
-                    has_recognition = (subfolder / "recognition" / "labels.json").exists()
-                    if not has_detection and not has_recognition:
-                        continue
-                    key = f"{project_dir.name}/{subfolder.name}"
-                    # Preserve existing assignment.
-                    new_assignments[key] = self.assignments.get(key)
-                    # Mark as "changed" if any source image already exists in a split dir.
-                    for task in DATASET_TASKS:
-                        src_images = subfolder / task / "images"
-                        if src_images.exists():
-                            if any(img.name in existing_image_names for img in src_images.iterdir()):
-                                new_changed.add(key)
-                                break
+        for _project_dir, subfolder in _iter_export_profile_dirs(export_root):
+            key = subfolder.relative_to(export_root).as_posix()
+            # Preserve existing assignment.
+            new_assignments[key] = self.assignments.get(key)
+            # Mark as "changed" if any source image already exists in a split dir.
+            for task in DATASET_TASKS:
+                src_images = subfolder / task / "images"
+                if src_images.exists() and any(img.name in existing_image_names for img in src_images.iterdir()):
+                    new_changed.add(key)
+                    break
 
         self.assignments = new_assignments
         self.changed_keys = new_changed
@@ -846,7 +879,7 @@ def create_ui():
             ).classes("w-64")
 
             ui.label(
-                "Use base-ocr for all-word training. Create/select style-specific profiles (e.g. italics)"
+                "Use all for all-word training. Create/select style-specific profiles (e.g. italics)"
                 " to keep model artifacts separated."
             ).classes("text-xs text-gray-500")
 
