@@ -36,6 +36,23 @@ To get the model files, you need to use git lfs.
 
 `voila data-labeler.ipynb` will run the labeling notebook web server
 
+### Dataset Layout By Group/Profile
+
+Training and validation datasets are now organized by profile (group), for example:
+
+- `ml-training/base-ocr/detection`
+- `ml-training/base-ocr/recognition`
+- `ml-validation/base-ocr/detection`
+- `ml-validation/base-ocr/recognition`
+
+Additional export groups from the labeler (for example `italics`,
+`small-caps`) are saved in their own profile folders under both split
+roots.
+
+Legacy datasets that used the old layout (`ml-training/detection`,
+`ml-validation/recognition`, etc.) are automatically migrated to
+`base-ocr`.
+
 ### `model-trainer.ipynb`
 
 To use the trainer, you have to pull down the doctr git repo because the

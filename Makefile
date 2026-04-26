@@ -1,6 +1,6 @@
 .PHONY: install setup reset remove-venv reset-full upgrade-deps test lint \
 	py-lint py-lint-fix lint-fix format pre-commit-check ci build clean \
-	clean-logs clean-cache run run-verbose help
+	clean-logs clean-cache run run-verbose export-models help
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -115,6 +115,10 @@ run: ## Run the training UI
 run-verbose: ## Run the training UI with verbose output
 	@echo "🚀 Starting OCR Training UI (verbose mode)..."
 	uv run pd-ocr-trainer-ui
+
+export-models: ## Copy trained model artifacts into the workspace exports directory
+	@echo "📦 Exporting trained models to the workspace..."
+	../scripts/export-models.sh
 
 clean: ## Clean up cache, temporary files, and logs (keeps venv and UV cache)
 	@echo "🧹 Cleaning Python cache files..."

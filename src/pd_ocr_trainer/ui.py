@@ -23,6 +23,7 @@ APP_NAME = "pd-ocr-labeler"
 MODEL_STORE_DIRNAME = "pd-ml-models"
 MODEL_NAME_PREFIX = "pd"
 BASE_OCR_PROFILE = "base-ocr"
+DATASET_TASKS = ("detection", "recognition")
 
 
 def get_os_data_parent() -> Path:
@@ -46,12 +47,14 @@ def get_os_data_parent() -> Path:
 APP_DATA_ROOT = get_os_data_parent() / APP_NAME
 SHARED_MODELS_DIR = get_os_data_parent() / MODEL_STORE_DIRNAME
 
-NOTEBOOK_DEFAULT_VOCAB_LIBRARY = ["multilingual", "currency"]
-NOTEBOOK_DEFAULT_CUSTOM_CHARACTERS = "⸺¡¿—‘’“”′″"
+DEFAULT_VOCAB_LIBRARY = ["multilingual", "currency"]
+DEFAULT_CUSTOM_CHARACTERS = "⸺¡¿—‘’“”′″"
 
 # Ensure directories exist
 ML_TRAINING_DIR.mkdir(exist_ok=True)
 ML_VALIDATION_DIR.mkdir(exist_ok=True)
+(ML_TRAINING_DIR / BASE_OCR_PROFILE).mkdir(parents=True, exist_ok=True)
+(ML_VALIDATION_DIR / BASE_OCR_PROFILE).mkdir(parents=True, exist_ok=True)
 SHARED_MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -68,9 +71,70 @@ def _model_output_dir(profile: str, model_type: str) -> Path:
     return _profile_model_root(profile) / model_type
 
 
+def _split_profile_root(split: str, profile: str = BASE_OCR_PROFILE) -> Path:
+    split_map = {"train": ML_TRAINING_DIR, "val": ML_VALIDATION_DIR}
+    root = split_map.get(split)
+    if root is None:
+        raise ValueError(f"Unknown split '{split}'")
+    return root / _normalize_profile_name(profile)
+
+
+def _migrate_legacy_dataset_layout() -> None:
+    """Move legacy split/task datasets into the base-ocr profile layout.
+
+    Legacy layout:
+      ml-training/detection, ml-training/recognition, ...
+
+    New layout:
+      ml-training/<profile>/detection, ml-training/<profile>/recognition, ...
+    """
+    base_profile = _normalize_profile_name(BASE_OCR_PROFILE)
+    for split_root in (ML_TRAINING_DIR, ML_VALIDATION_DIR):
+        has_legacy = any((split_root / task).exists() for task in DATASET_TASKS)
+        if not has_legacy:
+            continue
+
+        profile_root = split_root / base_profile
+        profile_root.mkdir(parents=True, exist_ok=True)
+
+        for task in DATASET_TASKS:
+            legacy_task_root = split_root / task
+            if not legacy_task_root.exists():
+                continue
+            target_task_root = profile_root / task
+
+            if not target_task_root.exists():
+                shutil.move(str(legacy_task_root), str(target_task_root))
+                continue
+
+            target_images = target_task_root / "images"
+            target_images.mkdir(parents=True, exist_ok=True)
+            legacy_images = legacy_task_root / "images"
+            if legacy_images.exists():
+                for src_img in legacy_images.iterdir():
+                    if src_img.is_file():
+                        shutil.move(str(src_img), str(target_images / src_img.name))
+
+            legacy_labels = ExportManager._load_json_map(legacy_task_root / "labels.json")
+            target_labels_path = target_task_root / "labels.json"
+            target_labels = ExportManager._load_json_map(target_labels_path)
+            target_labels.update(legacy_labels)
+            ExportManager._write_json_map(target_labels_path, target_labels)
+
+            shutil.rmtree(legacy_task_root, ignore_errors=True)
+
+
 def get_available_model_profiles() -> list[str]:
     """List trainable model profiles derived from export subfolders plus base-ocr."""
     profiles = {BASE_OCR_PROFILE}
+    for split_root in (ML_TRAINING_DIR, ML_VALIDATION_DIR):
+        if not split_root.exists():
+            continue
+        for profile_dir in split_root.iterdir():
+            if not profile_dir.is_dir():
+                continue
+            if any((profile_dir / task).exists() for task in DATASET_TASKS):
+                profiles.add(_normalize_profile_name(profile_dir.name))
     if SHARED_MODELS_DIR.exists():
         for profile_dir in SHARED_MODELS_DIR.iterdir():
             if profile_dir.is_dir():
@@ -147,9 +211,18 @@ class ExportManager:
     """Manages pd-ocr-labeler DocTR export assignments for training."""
 
     def __init__(self) -> None:
+        self.active_profile = _normalize_profile_name(BASE_OCR_PROFILE)
         self.assignments: dict[str, str | None] = {}
         self.changed_keys: set[str] = set()
         self.scan()
+
+    def set_profile(self, profile: str) -> None:
+        self.active_profile = _normalize_profile_name(profile)
+
+    def split_root(self, split: str) -> Path:
+        root = _split_profile_root(split, self.active_profile)
+        root.mkdir(parents=True, exist_ok=True)
+        return root
 
     @staticmethod
     def get_export_root() -> Path:
@@ -162,8 +235,8 @@ class ExportManager:
 
         # Index existing images in both split directories for change detection.
         existing_image_names: set[str] = set()
-        for split_root in (ML_TRAINING_DIR, ML_VALIDATION_DIR):
-            for task in ("detection", "recognition"):
+        for split_root in (self.split_root("train"), self.split_root("val")):
+            for task in DATASET_TASKS:
                 images_dir = split_root / task / "images"
                 if images_dir.exists():
                     for img in images_dir.iterdir():
@@ -187,7 +260,7 @@ class ExportManager:
                     # Preserve existing assignment.
                     new_assignments[key] = self.assignments.get(key)
                     # Mark as "changed" if any source image already exists in a split dir.
-                    for task in ("detection", "recognition"):
+                    for task in DATASET_TASKS:
                         src_images = subfolder / task / "images"
                         if src_images.exists():
                             if any(img.name in existing_image_names for img in src_images.iterdir()):
@@ -256,13 +329,12 @@ class ExportManager:
 
     def move_existing_project(self, project_id: str, from_split: str, to_split: str) -> int:
         """Physically move an on-disk project between ml-training and ml-validation."""
-        split_map = {"train": ML_TRAINING_DIR, "val": ML_VALIDATION_DIR}
-        src_root = split_map.get(from_split)
-        dest_root = split_map.get(to_split)
+        src_root = self.split_root(from_split) if from_split in {"train", "val"} else None
+        dest_root = self.split_root(to_split) if to_split in {"train", "val"} else None
         if src_root is None or dest_root is None or src_root == dest_root:
             return 0
         moved = 0
-        for task in ("detection", "recognition"):
+        for task in DATASET_TASKS:
             src_lp = src_root / task / "labels.json"
             if not src_lp.exists():
                 continue
@@ -301,15 +373,14 @@ class ExportManager:
 
     def move_existing_page(self, page_name: str, from_split: str, to_split: str) -> int:
         """Physically move one on-disk page (and its recognition crops) between splits."""
-        split_map = {"train": ML_TRAINING_DIR, "val": ML_VALIDATION_DIR}
-        src_root = split_map.get(from_split)
-        dest_root = split_map.get(to_split)
+        src_root = self.split_root(from_split) if from_split in {"train", "val"} else None
+        dest_root = self.split_root(to_split) if to_split in {"train", "val"} else None
         if src_root is None or dest_root is None or src_root == dest_root:
             return 0
 
         page_stem = Path(page_name).stem
         moved = 0
-        for task in ("detection", "recognition"):
+        for task in DATASET_TASKS:
             src_lp = src_root / task / "labels.json"
             if not src_lp.exists():
                 continue
@@ -374,7 +445,7 @@ class ExportManager:
         count = 0
         for key, split in to_copy:
             src_root = self.export_path(key)
-            dest_root = ML_TRAINING_DIR if split == "train" else ML_VALIDATION_DIR
+            dest_root = self.split_root("train" if split == "train" else "val")
             for task, include in task_flags.items():
                 if not include:
                     continue
@@ -434,11 +505,11 @@ class RecognitionTrainingConfig:
         self.amp = False
         self.early_stop = False
         self.early_stop_epochs = 5
-        default_vocab_library = [name for name in NOTEBOOK_DEFAULT_VOCAB_LIBRARY if name in VOCABS]
+        default_vocab_library = [name for name in DEFAULT_VOCAB_LIBRARY if name in VOCABS]
         if not default_vocab_library:
             default_vocab_library = ["french"] if "french" in VOCABS else [next(iter(VOCABS))]
         self.vocab_library = default_vocab_library
-        self.custom_characters = NOTEBOOK_DEFAULT_CUSTOM_CHARACTERS
+        self.custom_characters = DEFAULT_CUSTOM_CHARACTERS
         self.vocab = build_custom_vocab_arg(self.vocab_library, self.custom_characters)
         self.workers = 4
         self.device = 0 if torch.cuda.is_available() else None
@@ -448,6 +519,7 @@ class RecognitionTrainingConfig:
     _model_output_dir(BASE_OCR_PROFILE, "recognition").mkdir(parents=True, exist_ok=True)
 
 
+_migrate_legacy_dataset_layout()
 export_manager = ExportManager()
 detection_config = DetectionTrainingConfig()
 recognition_config = RecognitionTrainingConfig()
@@ -457,6 +529,9 @@ training_cancelled = False
 
 def create_ui():
     """Build the NiceGUI interface."""
+
+    model_profile_state = {"value": BASE_OCR_PROFILE}
+    export_manager.set_profile(model_profile_state["value"])
 
     with ui.header().classes("w-full bg-blue-500 text-white"):
         ui.label("OCR Training Suite").classes("text-2xl font-bold")
@@ -568,9 +643,9 @@ def create_ui():
                 # Existing data already in ml-training / ml-validation.
                 existing_projects: dict[str, int] = {}
                 if col_id == "train":
-                    existing_projects = export_manager.get_existing_projects(ML_TRAINING_DIR)
+                    existing_projects = export_manager.get_existing_projects(export_manager.split_root("train"))
                 elif col_id == "val":
-                    existing_projects = export_manager.get_existing_projects(ML_VALIDATION_DIR)
+                    existing_projects = export_manager.get_existing_projects(export_manager.split_root("val"))
 
                 has_content = pending_projects or existing_projects
                 with container:
@@ -619,7 +694,7 @@ def create_ui():
                             ui.separator()
                         for project_id, page_count in existing_projects.items():
                             pages = export_manager.get_existing_pages(
-                                ML_TRAINING_DIR if col_id == "train" else ML_VALIDATION_DIR,
+                                export_manager.split_root("train" if col_id == "train" else "val"),
                                 project_id,
                             )
                             exp_label = f"{project_id}  ·  {page_count} pages  [on disk]"
@@ -730,7 +805,7 @@ def create_ui():
                             return
                         refresh_kanban()
                         kanban_status.set_text(
-                            f"💾 Copied {count} export task(s) to ml-training / ml-validation datasets."
+                            f"💾 Copied {count} export task(s) into '{export_manager.active_profile}' datasets."
                         )
                         ui.notify("Assignments saved.", type="positive")
                     except Exception as e:
@@ -741,7 +816,6 @@ def create_ui():
             refresh_kanban()
 
         # ==================== TRAINING CONFIG SECTION ====================
-        model_profile_state = {"value": BASE_OCR_PROFILE}
         output_labels: dict[str, object] = {}
         with ui.card().classes("w-full"):
             ui.label("🎯 Model Profile").classes("font-semibold")
@@ -757,6 +831,8 @@ def create_ui():
                     det_label.set_text(f"Detection output root: {_model_output_dir(profile, 'detection')}")
                 if rec_label is not None:
                     rec_label.set_text(f"Recognition output root: {_model_output_dir(profile, 'recognition')}")
+                export_manager.set_profile(profile)
+                export_manager.scan()
 
             ui.select(
                 label="Training profile",
@@ -765,6 +841,7 @@ def create_ui():
                 on_change=lambda v: (
                     model_profile_state.__setitem__("value", _normalize_profile_name(str(v.value))),
                     refresh_model_output_labels(),
+                    refresh_kanban(),
                 ),
             ).classes("w-64")
 
@@ -786,7 +863,7 @@ def create_ui():
                         on_click=lambda: run_training("detection"),
                     ).props("color=green")
 
-                ui.label("Notebook-aligned detection fine-tune settings").classes("font-semibold text-sm")
+                ui.label("Detection fine-tune settings").classes("font-semibold text-sm")
                 output_labels["detection"] = ui.label("").classes("text-xs text-gray-600")
                 refresh_model_output_labels()
 
@@ -846,7 +923,7 @@ def create_ui():
                         on_click=lambda: run_training("recognition"),
                     ).props("color=green")
 
-                ui.label("Notebook-aligned recognition fine-tune settings").classes("font-semibold text-sm")
+                ui.label("Recognition fine-tune settings").classes("font-semibold text-sm")
                 output_labels["recognition"] = ui.label("").classes("text-xs text-gray-600")
                 refresh_model_output_labels()
 
@@ -998,14 +1075,14 @@ def create_ui():
                     ).classes("w-full")
 
                     ui.button(
-                        "Reset to Notebook Vocab Preset",
+                        "Reset to Default Vocab Preset",
                         on_click=lambda: (
                             setattr(
                                 recognition_config,
                                 "vocab_library",
-                                [name for name in NOTEBOOK_DEFAULT_VOCAB_LIBRARY if name in VOCABS],
+                                [name for name in DEFAULT_VOCAB_LIBRARY if name in VOCABS],
                             ),
-                            setattr(recognition_config, "custom_characters", NOTEBOOK_DEFAULT_CUSTOM_CHARACTERS),
+                            setattr(recognition_config, "custom_characters", DEFAULT_CUSTOM_CHARACTERS),
                             refresh_vocab_ui(),
                         ),
                     ).props("color=secondary")
@@ -1070,8 +1147,8 @@ def create_ui():
                     detection_config.model_name = _prefixed_model_name(
                         "detection", detection_config.model_name, selected_profile
                     )
-                    det_train_count = label_count(ML_TRAINING_DIR, "detection")
-                    det_val_count = label_count(ML_VALIDATION_DIR, "detection")
+                    det_train_count = label_count(_split_profile_root("train", selected_profile), "detection")
+                    det_val_count = label_count(_split_profile_root("val", selected_profile), "detection")
                     if det_train_count == 0 or det_val_count == 0:
                         ui.notify(
                             "Please assign and save pages to both train/val for detection before training.",
@@ -1083,8 +1160,8 @@ def create_ui():
                     recognition_config.model_name = _prefixed_model_name(
                         "recognition", recognition_config.model_name, selected_profile
                     )
-                    rec_train_count = label_count(ML_TRAINING_DIR, "recognition")
-                    rec_val_count = label_count(ML_VALIDATION_DIR, "recognition")
+                    rec_train_count = label_count(_split_profile_root("train", selected_profile), "recognition")
+                    rec_val_count = label_count(_split_profile_root("val", selected_profile), "recognition")
                     if rec_train_count == 0 or rec_val_count == 0:
                         ui.notify(
                             "Please assign and save pages to both train/val for recognition before training.",
@@ -1108,11 +1185,14 @@ def create_ui():
                 def train_worker():
                     global training_thread, training_cancelled
                     try:
+                        selected_train_root = _split_profile_root("train", selected_profile)
+                        selected_val_root = _split_profile_root("val", selected_profile)
+
                         if run_detection:
                             status_label.set_text("⏳ Running detection fine-tuning...")
                             detect_from_config(
-                                train_path=ML_TRAINING_DIR / "detection",
-                                val_path=ML_VALIDATION_DIR / "detection",
+                                train_path=selected_train_root / "detection",
+                                val_path=selected_val_root / "detection",
                                 arch=detection_config.arch,
                                 epochs=detection_config.epochs,
                                 batch_size=detection_config.batch_size,
@@ -1127,8 +1207,8 @@ def create_ui():
                         if run_recognition:
                             status_label.set_text("⏳ Running recognition fine-tuning...")
                             train_from_config(
-                                train_path=ML_TRAINING_DIR / "recognition",
-                                val_path=ML_VALIDATION_DIR / "recognition",
+                                train_path=selected_train_root / "recognition",
+                                val_path=selected_val_root / "recognition",
                                 arch=recognition_config.arch,
                                 epochs=recognition_config.epochs,
                                 batch_size=recognition_config.batch_size,
