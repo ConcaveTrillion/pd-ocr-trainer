@@ -232,23 +232,41 @@ def _project_from_stem(stem: str) -> str:
     return "_".join(parts[:end])
 
 
+def _detection_page_from_recognition_name(img_name: str) -> str:
+    """Best-effort page filename from a recognition crop filename.
+
+    Recognition crops are expected to be <page_stem>_<x1>_<x2>_<y1>_<y2>.<ext>.
+    If the suffix shape does not match, return the original name.
+    """
+    path = Path(img_name)
+    parts = path.stem.split("_")
+    if len(parts) > 4 and all(p.isdigit() for p in parts[-4:]):
+        return f"{'_'.join(parts[:-4])}{path.suffix}"
+    return img_name
+
+
 def _group_existing_by_project(split_root: Path) -> dict[str, list[str]]:
-    """Return {project_id: [img_name, ...]} from the detection (or recognition) labels.json."""
+    """Return {project_id: [page_img_name, ...]} for an existing split.
+
+    Prefer detection labels (one entry per page). If absent, derive page names from
+    recognition crops so projects still appear in the on-disk UI.
+    """
     groups: dict[str, list[str]] = defaultdict(list)
-    for task in ("detection", "recognition"):
-        labels_path = split_root / task / "labels.json"
-        if not labels_path.exists():
-            continue
-        try:
-            with open(labels_path) as f:
-                labels = json.load(f)
-        except Exception:
-            continue
-        for img_name in labels:
+    detection_labels = ExportManager._load_json_map(split_root / "detection" / "labels.json")
+    if detection_labels:
+        for img_name in detection_labels:
             groups[_project_from_stem(Path(img_name).stem)].append(img_name)
-        if task == "detection" and groups:
-            break
-    return {k: sorted(v) for k, v in sorted(groups.items())}
+        return {k: sorted(v) for k, v in sorted(groups.items())}
+
+    recognition_labels = ExportManager._load_json_map(split_root / "recognition" / "labels.json")
+    if recognition_labels:
+        by_project_pages: dict[str, set[str]] = defaultdict(set)
+        for img_name in recognition_labels:
+            page_name = _detection_page_from_recognition_name(img_name)
+            by_project_pages[_project_from_stem(Path(page_name).stem)].add(page_name)
+        return {k: sorted(v) for k, v in sorted(by_project_pages.items())}
+
+    return {}
 
 
 class ExportManager:
@@ -290,7 +308,16 @@ class ExportManager:
         new_changed: set[str] = set()
 
         for _project_dir, subfolder in _iter_export_profile_dirs(export_root):
+            if _normalize_profile_name(subfolder.name) != self.active_profile:
+                continue
             key = subfolder.relative_to(export_root).as_posix()
+
+            # If every source page/crop from this export is already present in a dataset split,
+            # keep it out of the pending export list and represent it only via the on-disk view.
+            export_pages = self.get_export_pages(key)
+            if export_pages and all(page_name in existing_image_names for page_name in export_pages):
+                continue
+
             # Preserve existing assignment.
             new_assignments[key] = self.assignments.get(key)
             # Mark as "changed" if any source image already exists in a split dir.
@@ -332,6 +359,15 @@ class ExportManager:
         """Return the filesystem path for an export key."""
         parts = key.split("/", 1)
         return self.get_export_root() / parts[0] / parts[1]
+
+    def get_export_pages(self, key: str) -> list[str]:
+        """Return sorted page image names for an export key."""
+        export_root = self.export_path(key)
+        for task in ("detection", "recognition"):
+            labels = self._load_json_map(export_root / task / "labels.json")
+            if labels:
+                return sorted(labels)
+        return []
 
     @staticmethod
     def _load_json_map(path: Path) -> dict:
@@ -479,6 +515,7 @@ class ExportManager:
         for key, split in to_copy:
             src_root = self.export_path(key)
             dest_root = self.split_root("train" if split == "train" else "val")
+            copied_any_task = False
             for task, include in task_flags.items():
                 if not include:
                     continue
@@ -500,7 +537,11 @@ class ExportManager:
 
                 dest_labels.update(src_labels)
                 self._write_json_map(dest_labels_path, dest_labels)
+                copied_any_task = True
                 count += 1
+
+            if copied_any_task:
+                self.assignments[key] = None
 
         self.scan()
         return {"copied": count}
@@ -570,9 +611,56 @@ def create_ui():
         ui.label("OCR Training Suite").classes("text-2xl font-bold")
 
     with ui.column().classes("w-full"):
+        output_labels: dict[str, object] = {}
+        dataset_scope_label: dict[str, object] = {}
+
+        # ==================== PROFILE SECTION ====================
+        with ui.card().classes("w-full"):
+            ui.label("🎯 Model Profile").classes("font-semibold")
+            profile_options = get_available_model_profiles()
+            if model_profile_state["value"] not in profile_options:
+                profile_options = [model_profile_state["value"], *profile_options]
+
+            def refresh_model_output_labels() -> None:
+                profile = _normalize_profile_name(model_profile_state["value"])
+                det_label = output_labels.get("detection")
+                rec_label = output_labels.get("recognition")
+                dataset_label = dataset_scope_label.get("value")
+                if det_label is not None:
+                    det_label.set_text(f"Detection output root: {_model_output_dir(profile, 'detection')}")
+                if rec_label is not None:
+                    rec_label.set_text(f"Recognition output root: {_model_output_dir(profile, 'recognition')}")
+                if dataset_label is not None:
+                    dataset_label.set_text(f"Showing exports and dataset files for profile '{profile}'.")
+                export_manager.set_profile(profile)
+                export_manager.scan()
+
+            ui.select(
+                label="Training profile",
+                options=profile_options,
+                value=model_profile_state["value"],
+                on_change=lambda v: (
+                    model_profile_state.__setitem__("value", _normalize_profile_name(str(v.value))),
+                    refresh_model_output_labels(),
+                    refresh_kanban(),
+                ),
+            ).classes("w-64")
+
+            ui.label(
+                "Select the profile first. Dataset management below shows only exports and datasets for that profile."
+            ).classes("text-xs text-gray-500")
+
+            ui.label(
+                "Use all for all-word training. Create/select style-specific profiles (e.g. italics)"
+                " to keep model artifacts separated."
+            ).classes("text-xs text-gray-500")
+
+            refresh_model_output_labels()
+
         # ==================== DATASET SECTION ====================
         with ui.card().classes("w-full"):
             ui.label("📂 Dataset Management").classes("text-lg font-bold")
+            dataset_scope_label["value"] = ui.label("").classes("text-xs text-gray-500")
             ui.label(
                 "Auto-populated from the pd-ocr-labeler DocTR export root. "
                 "Yellow items are already present in the training/validation datasets. "
@@ -688,38 +776,39 @@ def create_ui():
 
                     # --- Pending (from labeler export root) ---
                     for project_id, keys in pending_projects.items():
-                        with ui.card().classes("w-full p-1 mb-1"):
-                            with ui.row().classes("items-center gap-1 w-full cursor-grab") as proj_row:
-                                proj_row.props("draggable=true")
-                                proj_row.on(
-                                    "dragstart",
-                                    lambda e, p=project_id: (
-                                        dragging.__setitem__("type", "project"),
-                                        dragging.__setitem__("key", p),
-                                    ),
-                                )
-                                ui.icon("folder").classes("text-sm text-gray-500")
-                                ui.label(project_id).classes("text-xs font-semibold flex-1 truncate")
-                                ui.label(f"({len(keys)})").classes("text-xs text-gray-400")
-                            with ui.row().classes("flex-wrap gap-1 pl-2 pt-1"):
-                                for key in sorted(keys):
-                                    subfolder = key.split("/", 1)[1]
+                        pages_by_key = {key: export_manager.get_export_pages(key) for key in sorted(keys)}
+                        page_count = sum(len(pages) for pages in pages_by_key.values())
+                        exp_label = f"{project_id}  ·  {page_count} pages  [export]"
+                        with ui.expansion(exp_label).classes(
+                            "w-full mb-1 bg-slate-50 border border-slate-200 rounded"
+                        ) as exp_card:
+                            exp_card.props("draggable=true dense")
+                            exp_card.on(
+                                "dragstart",
+                                lambda e, p=project_id: (
+                                    dragging.__setitem__("type", "project"),
+                                    dragging.__setitem__("key", p),
+                                ),
+                            )
+                            with ui.column().classes("w-full gap-1 pl-2"):
+                                for key, pages in pages_by_key.items():
                                     changed = export_manager.is_changed(key)
-                                    base_cls = "cursor-grab rounded px-2 py-0.5 text-xs border "
-                                    color_cls = (
-                                        "bg-yellow-100 border-yellow-400 text-yellow-800"
-                                        if changed
-                                        else "bg-slate-100 border-slate-300 text-slate-600"
-                                    )
-                                    chip = ui.label(subfolder).classes(base_cls + color_cls)
-                                    chip.props("draggable=true")
-                                    chip.on(
-                                        "dragstart",
-                                        lambda e, k=key: (
-                                            dragging.__setitem__("type", "export"),
-                                            dragging.__setitem__("key", k),
-                                        ),
-                                    )
+                                    for page_name in pages:
+                                        row_cls = "w-full mb-1 px-2 py-1 border rounded shadow-none cursor-grab " + (
+                                            "bg-yellow-100 border-yellow-400 text-yellow-800"
+                                            if changed
+                                            else "bg-white border-slate-200 text-slate-600"
+                                        )
+                                        with ui.card().classes(row_cls) as export_row:
+                                            export_row.props("draggable=true")
+                                            export_row.on(
+                                                "dragstart",
+                                                lambda e, k=key: (
+                                                    dragging.__setitem__("type", "export"),
+                                                    dragging.__setitem__("key", k),
+                                                ),
+                                            )
+                                            ui.label(page_name).classes("text-xs font-mono")
 
                     # --- Already present in ml-training / ml-validation ---
                     if existing_projects:
@@ -849,42 +938,6 @@ def create_ui():
             refresh_kanban()
 
         # ==================== TRAINING CONFIG SECTION ====================
-        output_labels: dict[str, object] = {}
-        with ui.card().classes("w-full"):
-            ui.label("🎯 Model Profile").classes("font-semibold")
-            profile_options = get_available_model_profiles()
-            if model_profile_state["value"] not in profile_options:
-                profile_options = [model_profile_state["value"], *profile_options]
-
-            def refresh_model_output_labels() -> None:
-                profile = _normalize_profile_name(model_profile_state["value"])
-                det_label = output_labels.get("detection")
-                rec_label = output_labels.get("recognition")
-                if det_label is not None:
-                    det_label.set_text(f"Detection output root: {_model_output_dir(profile, 'detection')}")
-                if rec_label is not None:
-                    rec_label.set_text(f"Recognition output root: {_model_output_dir(profile, 'recognition')}")
-                export_manager.set_profile(profile)
-                export_manager.scan()
-
-            ui.select(
-                label="Training profile",
-                options=profile_options,
-                value=model_profile_state["value"],
-                on_change=lambda v: (
-                    model_profile_state.__setitem__("value", _normalize_profile_name(str(v.value))),
-                    refresh_model_output_labels(),
-                    refresh_kanban(),
-                ),
-            ).classes("w-64")
-
-            ui.label(
-                "Use all for all-word training. Create/select style-specific profiles (e.g. italics)"
-                " to keep model artifacts separated."
-            ).classes("text-xs text-gray-500")
-
-            refresh_model_output_labels()
-
         with ui.row().classes("w-full gap-4 items-start"):
             with ui.card().classes("flex-1"):
                 with ui.row().classes("w-full items-center justify-between"):
@@ -1212,6 +1265,7 @@ def create_ui():
                 else:
                     status_label.set_text("⏳ Training starting (recognition)...")
                     output_area.value = "Starting training...\n\n[1/1] Recognition\n"
+                output_area.update()
 
                 training_cancelled = False
 
@@ -1220,6 +1274,31 @@ def create_ui():
                     try:
                         selected_train_root = _split_profile_root("train", selected_profile)
                         selected_val_root = _split_profile_root("val", selected_profile)
+
+                        def ui_progress(payload: dict) -> None:
+                            event = payload.get("event")
+                            if event == "log":
+                                message = str(payload.get("message", ""))
+                                if message:
+                                    output_area.value += f"{message}\n"
+                                    output_area.update()
+                                return
+
+                            if event == "train_batch":
+                                batch = payload.get("batch")
+                                total = payload.get("total_batches")
+                                loss = float(payload.get("loss", 0.0))
+                                lr = float(payload.get("lr", 0.0))
+                                status_label.set_text(
+                                    f"⏳ Training batch {batch}/{total} · loss={loss:.4f} · lr={lr:.6f}"
+                                )
+                                return
+
+                            if event == "val_batch":
+                                batch = payload.get("batch")
+                                total = payload.get("total_batches")
+                                loss = float(payload.get("loss", 0.0))
+                                status_label.set_text(f"⏳ Validation batch {batch}/{total} · loss={loss:.4f}")
 
                         if run_detection:
                             status_label.set_text("⏳ Running detection fine-tuning...")
@@ -1234,8 +1313,10 @@ def create_ui():
                                 output_dir=str(detection_out_dir),
                                 device=detection_config.device,
                                 name=detection_config.model_name,
+                                progress_hook=ui_progress,
                             )
                             output_area.value += "✅ Detection fine-tuning completed.\n"
+                            output_area.update()
 
                         if run_recognition:
                             status_label.set_text("⏳ Running recognition fine-tuning...")
@@ -1260,8 +1341,10 @@ def create_ui():
                                 device=recognition_config.device,
                                 pretrained=recognition_config.pretrained,
                                 name=recognition_config.model_name,
+                                progress_hook=ui_progress,
                             )
                             output_area.value += "✅ Recognition fine-tuning completed.\n"
+                            output_area.update()
 
                         if not training_cancelled:
                             status_label.set_text("✅ Training completed!")

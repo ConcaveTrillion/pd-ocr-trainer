@@ -4,7 +4,9 @@ import logging
 import multiprocessing
 import os
 import time
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
@@ -17,7 +19,6 @@ from torchvision.transforms.v2 import (
     Compose,
     Normalize,
     RandomGrayscale,
-    RandomPerspective,
     RandomPhotometricDistort,
 )
 
@@ -32,6 +33,18 @@ from doctr.models import detection, login_to_hub, push_to_hf_hub
 from doctr.utils.metrics import LocalizationConfusion
 
 from .utils import EarlyStopper, plot_recorder, plot_samples
+
+ProgressHook = Callable[[dict[str, Any]], None]
+
+
+def _emit_progress(progress_hook: ProgressHook | None, **payload: Any) -> None:
+    if progress_hook is None:
+        return
+    try:
+        progress_hook(payload)
+    except Exception:
+        # Progress reporting must never break training.
+        pass
 
 
 def record_lr(
@@ -96,14 +109,26 @@ def record_lr(
     return lr_recorder[: len(loss_recorder)], loss_recorder
 
 
-def fit_one_epoch(model, device, train_loader, batch_transforms, optimizer, scheduler, amp=False, log=None, rank=0):
+def fit_one_epoch(
+    model,
+    device,
+    train_loader,
+    batch_transforms,
+    optimizer,
+    scheduler,
+    amp=False,
+    log=None,
+    rank=0,
+    progress_hook: ProgressHook | None = None,
+):
     if amp:
         scaler = torch.cuda.amp.GradScaler()
 
     model.train()
     epoch_train_loss, batch_cnt = 0, 0
-    pbar = tqdm(train_loader, dynamic_ncols=True, disable=(rank != 0))
-    for images, targets in pbar:
+    iterator = tqdm(train_loader, dynamic_ncols=True, disable=(rank != 0)) if progress_hook is None else train_loader
+    total_batches = len(train_loader)
+    for batch_idx, (images, targets) in enumerate(iterator, start=1):
         if torch.cuda.is_available():
             images = images.to(device)
         images = batch_transforms(images)
@@ -126,7 +151,17 @@ def fit_one_epoch(model, device, train_loader, batch_transforms, optimizer, sche
         scheduler.step()
         last_lr = scheduler.get_last_lr()[0]
 
-        pbar.set_description(f"Training loss: {train_loss.item():.6} | LR: {last_lr:.6}")
+        if progress_hook is None:
+            iterator.set_description(f"Training loss: {train_loss.item():.6} | LR: {last_lr:.6}")
+        else:
+            _emit_progress(
+                progress_hook,
+                event="train_batch",
+                loss=float(train_loss.item()),
+                lr=float(last_lr),
+                batch=batch_idx,
+                total_batches=total_batches,
+            )
         if log:
             log(train_loss=train_loss.item(), lr=last_lr)
 
@@ -174,7 +209,62 @@ def evaluate(model, device, val_loader, batch_transforms, val_metric, amp=False,
     return val_loss, recall, precision, mean_iou
 
 
-def main(args):
+def evaluate_with_progress(
+    model,
+    device,
+    val_loader,
+    batch_transforms,
+    val_metric,
+    amp=False,
+    log=None,
+    progress_hook: ProgressHook | None = None,
+):
+    model.eval()
+    val_metric.reset()
+    val_loss, batch_cnt = 0, 0
+    iterator = tqdm(val_loader, dynamic_ncols=True) if progress_hook is None else val_loader
+    total_batches = len(val_loader)
+    for batch_idx, (images, targets) in enumerate(iterator, start=1):
+        images = images.to(device)
+        images = batch_transforms(images)
+        if amp:
+            with torch.cuda.amp.autocast():
+                out = model(images, targets, return_preds=True)
+        else:
+            out = model(images, targets, return_preds=True)
+
+        loc_preds = out["preds"]
+        for target, loc_pred in zip(targets, loc_preds, strict=False):
+            for boxes_gt, boxes_pred in zip(target.values(), loc_pred.values(), strict=False):
+                if isinstance(boxes_pred, np.ndarray) and boxes_pred.ndim == 2 and boxes_pred.shape[1] == 5:
+                    boxes_pred = boxes_pred[:, :4]
+                val_metric.update(
+                    gts=boxes_gt,
+                    preds=boxes_pred if len(boxes_pred) else np.zeros((0, 4)),
+                )
+
+        if progress_hook is None:
+            iterator.set_description(f"Validation loss: {out['loss'].item():.6}")
+        else:
+            _emit_progress(
+                progress_hook,
+                event="val_batch",
+                loss=float(out["loss"].item()),
+                batch=batch_idx,
+                total_batches=total_batches,
+            )
+        if log:
+            log(val_loss=out["loss"].item())
+
+        val_loss += out["loss"].item()
+        batch_cnt += 1
+
+    val_loss /= batch_cnt
+    recall, precision, mean_iou = val_metric.summary()
+    return val_loss, recall, precision, mean_iou
+
+
+def main(args, progress_hook: ProgressHook | None = None):
     world_size = int(os.environ.get("WORLD_SIZE", 1))
     distributed = world_size > 1
 
@@ -200,10 +290,20 @@ def main(args):
     slack_token = os.getenv("TQDM_SLACK_TOKEN")
     slack_channel = os.getenv("TQDM_SLACK_CHANNEL")
 
-    pbar = tqdm(disable=False if (slack_token and slack_channel) and (rank == 0) else True)
-    if slack_token and slack_channel:
-        pbar.write = lambda msg: pbar.sio.client.chat_postMessage(channel=slack_channel, text=msg)
-    pbar.write(str(args))
+    pbar = None
+    if progress_hook is None:
+        pbar = tqdm(disable=False if (slack_token and slack_channel) and (rank == 0) else True)
+        if slack_token and slack_channel:
+            pbar.write = lambda msg: pbar.sio.client.chat_postMessage(channel=slack_channel, text=msg)
+
+    def log_line(message: str) -> None:
+        if pbar is not None:
+            pbar.write(message)
+        else:
+            print(message)
+        _emit_progress(progress_hook, event="log", message=message)
+
+    log_line(str(args))
 
     if rank == 0 and args.push_to_hub:
         login_to_hub()
@@ -218,7 +318,17 @@ def main(args):
         val_set = DetectionDataset(
             img_folder=os.path.join(args.val_path, "images"),
             label_path=os.path.join(args.val_path, "labels.json"),
-            img_transforms=T.Resize((args.input_size, args.input_size), preserve_aspect_ratio=True, symmetric_pad=True),
+            sample_transforms=T.SampleCompose(
+                [
+                    T.Resize((args.input_size, args.input_size), preserve_aspect_ratio=True, symmetric_pad=True),
+                ]
+                if not args.rotation
+                else [
+                    T.Resize(args.input_size, preserve_aspect_ratio=True),
+                    T.RandomApply(T.RandomRotate(90, expand=True), 0.5),
+                    T.Resize((args.input_size, args.input_size), preserve_aspect_ratio=True, symmetric_pad=True),
+                ]
+            ),
             use_polygons=args.rotation,
         )
         with open(os.path.join(args.val_path, "labels.json"), "rb") as f:
@@ -233,7 +343,7 @@ def main(args):
             pin_memory=torch.cuda.is_available(),
             collate_fn=val_set.collate_fn,
         )
-        pbar.write(
+        log_line(
             f"Validation set loaded in {time.time() - st:.4}s ({len(val_set)} samples in {len(val_loader)} batches)"
         )
 
@@ -252,7 +362,7 @@ def main(args):
     )
 
     if isinstance(args.resume, str):
-        pbar.write(f"Resuming {args.resume}")
+        log_line(f"Resuming {args.resume}")
         model.from_pretrained(args.resume)
 
     if args.freeze_backbone:
@@ -270,11 +380,17 @@ def main(args):
         val_metric = LocalizationConfusion(use_polygons=args.rotation)
 
     if rank == 0 and args.test_only:
-        pbar.write("Running evaluation")
-        val_loss, recall, precision, mean_iou = evaluate(
-            model, device, val_loader, batch_transforms, val_metric, amp=args.amp
+        log_line("Running evaluation")
+        val_loss, recall, precision, mean_iou = evaluate_with_progress(
+            model,
+            device,
+            val_loader,
+            batch_transforms,
+            val_metric,
+            amp=args.amp,
+            progress_hook=progress_hook,
         )
-        pbar.write(
+        log_line(
             f"Validation loss: {val_loss:.6} (Recall: {recall:.2%} | Precision: {precision:.2%} | Mean IoU: {mean_iou:.2%})"
         )
         return
@@ -283,21 +399,58 @@ def main(args):
     with open(os.path.join(args.train_path, "labels.json"), "rb") as f:
         train_hash = hashlib.sha256(f.read()).hexdigest()
 
+    img_transforms = T.OneOf(
+        [
+            Compose(
+                [
+                    T.RandomApply(T.ColorInversion(), 0.3),
+                    T.RandomApply(T.GaussianBlur(sigma=(0.5, 1.5)), 0.2),
+                ]
+            ),
+            Compose(
+                [
+                    T.RandomApply(T.RandomShadow(), 0.3),
+                    T.RandomApply(T.GaussianNoise(), 0.1),
+                    T.RandomApply(T.GaussianBlur(sigma=(0.5, 1.5)), 0.3),
+                    RandomGrayscale(p=0.15),
+                ]
+            ),
+            RandomPhotometricDistort(p=0.3),
+            lambda x: x,
+        ]
+    )
+
+    sample_transforms = T.SampleCompose(
+        [
+            T.RandomHorizontalFlip(0.15),
+            T.OneOf(
+                [
+                    T.RandomApply(T.RandomCrop(ratio=(0.6, 1.33)), 0.25),
+                    T.RandomResize(scale_range=(0.4, 0.9), preserve_aspect_ratio=0.5, symmetric_pad=0.5, p=0.25),
+                ]
+            ),
+            T.Resize((args.input_size, args.input_size), preserve_aspect_ratio=True, symmetric_pad=True),
+        ]
+        if not args.rotation
+        else [
+            T.RandomHorizontalFlip(0.15),
+            T.OneOf(
+                [
+                    T.RandomApply(T.RandomCrop(ratio=(0.6, 1.33)), 0.25),
+                    T.RandomResize(scale_range=(0.4, 0.9), preserve_aspect_ratio=0.5, symmetric_pad=0.5, p=0.25),
+                ]
+            ),
+            T.Resize(args.input_size, preserve_aspect_ratio=True),
+            T.RandomApply(T.RandomRotate(90, expand=True), 0.5),
+            T.Resize((args.input_size, args.input_size), preserve_aspect_ratio=True, symmetric_pad=True),
+        ]
+    )
+
     train_set = DetectionDataset(
         img_folder=os.path.join(args.train_path, "images"),
         label_path=os.path.join(args.train_path, "labels.json"),
-        img_transforms=Compose(
-            [
-                T.Resize((args.input_size, args.input_size), preserve_aspect_ratio=True, symmetric_pad=True),
-                T.RandomApply(T.ColorInversion(), 0.1),
-                RandomGrayscale(p=0.1),
-                RandomPhotometricDistort(p=0.1),
-                T.RandomApply(T.RandomShadow(), p=0.4),
-                T.RandomApply(T.GaussianNoise(mean=0, std=0.1), 0.1),
-                T.RandomApply(T.GaussianBlur(sigma=(0.5, 1.5)), 0.3),
-                RandomPerspective(distortion_scale=0.2, p=0.3),
-            ]
-        ),
+        img_transforms=img_transforms,
+        sample_transforms=sample_transforms,
         use_polygons=args.rotation,
     )
 
@@ -316,7 +469,7 @@ def main(args):
         collate_fn=train_set.collate_fn,
     )
     if rank == 0:
-        pbar.write(
+        log_line(
             f"Train set loaded in {time.time() - st:.4}s ({len(train_set)} samples in {len(train_loader)} batches)"
         )
 
@@ -437,22 +590,42 @@ def main(args):
             amp=args.amp,
             log=log_at_step,
             rank=rank,
+            progress_hook=progress_hook,
         )
 
         if rank == 0:
-            pbar.write(f"Epoch {epoch + 1}/{args.epochs} - Training loss: {train_loss:.6} | LR: {actual_lr:.6}")
+            log_line(f"Epoch {epoch + 1}/{args.epochs} - Training loss: {train_loss:.6} | LR: {actual_lr:.6}")
 
-            val_loss, recall, precision, mean_iou = evaluate(
-                model, device, val_loader, batch_transforms, val_metric, amp=args.amp, log=log_at_step
+            val_loss, recall, precision, mean_iou = evaluate_with_progress(
+                model,
+                device,
+                val_loader,
+                batch_transforms,
+                val_metric,
+                amp=args.amp,
+                log=log_at_step,
+                progress_hook=progress_hook,
             )
             if val_loss < min_loss:
-                pbar.write(f"Validation loss decreased {min_loss:.6} --> {val_loss:.6}: saving state...")
+                log_line(f"Validation loss decreased {min_loss:.6} --> {val_loss:.6}: saving state...")
                 params = model.module if hasattr(model, "module") else model
                 torch.save(params.state_dict(), Path(args.output_dir) / f"{exp_name}.pt")
                 min_loss = val_loss
-            pbar.write(
+            log_line(
                 f"Epoch {epoch + 1}/{args.epochs} - Validation loss: {val_loss:.6} "
                 f"(Recall: {recall:.2%} | Precision: {precision:.2%} | Mean IoU: {mean_iou:.2%})"
+            )
+            _emit_progress(
+                progress_hook,
+                event="epoch_end",
+                epoch=epoch + 1,
+                total_epochs=args.epochs,
+                train_loss=float(train_loss),
+                val_loss=float(val_loss),
+                lr=float(actual_lr),
+                recall=float(recall),
+                precision=float(precision),
+                mean_iou=float(mean_iou),
             )
 
             if args.wb:
@@ -479,7 +652,7 @@ def main(args):
                 logger.report_scalar(title="Mean IoU", series="mean_iou", value=mean_iou, iteration=epoch)
 
             if args.early_stop and early_stopper.early_stop(val_loss):
-                pbar.write("Training halted early due to reaching patience limit.")
+                log_line("Training halted early due to reaching patience limit.")
                 break
 
     if rank == 0:
@@ -574,6 +747,7 @@ def detect_from_config(
     device: int | None = None,
     pretrained: bool = True,
     name: str | None = None,
+    progress_hook: ProgressHook | None = None,
 ) -> None:
     """Run detection fine-tuning with simplified configuration, suitable for UI calls.
 
@@ -633,7 +807,7 @@ def detect_from_config(
         find_lr=False,
     )
 
-    main(args)
+    main(args, progress_hook=progress_hook)
 
 
 if __name__ == "__main__":

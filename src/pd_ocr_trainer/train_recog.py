@@ -4,7 +4,9 @@ import logging
 import multiprocessing
 import os
 import time
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
@@ -33,6 +35,18 @@ from doctr.models import login_to_hub, push_to_hf_hub, recognition
 from doctr.utils.metrics import TextMatch
 
 from .utils import EarlyStopper, plot_recorder, plot_samples
+
+ProgressHook = Callable[[dict[str, Any]], None]
+
+
+def _emit_progress(progress_hook: ProgressHook | None, **payload: Any) -> None:
+    if progress_hook is None:
+        return
+    try:
+        progress_hook(payload)
+    except Exception:
+        # Progress reporting must never break training.
+        pass
 
 
 def resolve_vocab(vocab_arg: str) -> str:
@@ -127,15 +141,27 @@ def record_lr(
     return lr_recorder[: len(loss_recorder)], loss_recorder
 
 
-def fit_one_epoch(model, device, train_loader, batch_transforms, optimizer, scheduler, amp=False, log=None, rank=0):
+def fit_one_epoch(
+    model,
+    device,
+    train_loader,
+    batch_transforms,
+    optimizer,
+    scheduler,
+    amp=False,
+    log=None,
+    rank=0,
+    progress_hook: ProgressHook | None = None,
+):
     if amp:
         scaler = torch.cuda.amp.GradScaler()
 
     model.train()
     # Iterate over the batches of the dataset
     epoch_train_loss, batch_cnt = 0, 0
-    pbar = tqdm(train_loader, dynamic_ncols=True, disable=(rank != 0))
-    for images, targets in pbar:
+    iterator = tqdm(train_loader, dynamic_ncols=True, disable=(rank != 0)) if progress_hook is None else train_loader
+    total_batches = len(train_loader)
+    for batch_idx, (images, targets) in enumerate(iterator, start=1):
         if torch.cuda.is_available():
             images = images.to(device)
         images = batch_transforms(images)
@@ -160,7 +186,17 @@ def fit_one_epoch(model, device, train_loader, batch_transforms, optimizer, sche
         scheduler.step()
         last_lr = scheduler.get_last_lr()[0]
 
-        pbar.set_description(f"Training loss: {train_loss.item():.6} | LR: {last_lr:.6}")
+        if progress_hook is None:
+            iterator.set_description(f"Training loss: {train_loss.item():.6} | LR: {last_lr:.6}")
+        else:
+            _emit_progress(
+                progress_hook,
+                event="train_batch",
+                loss=float(train_loss.item()),
+                lr=float(last_lr),
+                batch=batch_idx,
+                total_batches=total_batches,
+            )
         if log:
             log(train_loss=train_loss.item(), lr=last_lr)
 
@@ -207,7 +243,57 @@ def evaluate(model, device, val_loader, batch_transforms, val_metric, amp=False,
     return val_loss, result["raw"], result["unicase"]
 
 
-def main(args):
+def evaluate_with_progress(
+    model,
+    device,
+    val_loader,
+    batch_transforms,
+    val_metric,
+    amp=False,
+    log=None,
+    progress_hook: ProgressHook | None = None,
+):
+    model.eval()
+    val_metric.reset()
+    val_loss, batch_cnt = 0, 0
+    iterator = tqdm(val_loader, dynamic_ncols=True) if progress_hook is None else val_loader
+    total_batches = len(val_loader)
+    for batch_idx, (images, targets) in enumerate(iterator, start=1):
+        images = images.to(device)
+        images = batch_transforms(images)
+        if amp:
+            with torch.cuda.amp.autocast():
+                out = model(images, targets, return_preds=True)
+        else:
+            out = model(images, targets, return_preds=True)
+        if len(out["preds"]):
+            words, _ = zip(*out["preds"], strict=False)
+        else:
+            words = []
+        val_metric.update(targets, words)
+
+        if progress_hook is None:
+            iterator.set_description(f"Validation loss: {out['loss'].item():.6}")
+        else:
+            _emit_progress(
+                progress_hook,
+                event="val_batch",
+                loss=float(out["loss"].item()),
+                batch=batch_idx,
+                total_batches=total_batches,
+            )
+        if log:
+            log(val_loss=out["loss"].item())
+
+        val_loss += out["loss"].item()
+        batch_cnt += 1
+
+    val_loss /= batch_cnt
+    result = val_metric.summary()
+    return val_loss, result["raw"], result["unicase"]
+
+
+def main(args, progress_hook: ProgressHook | None = None):
     # Detect distributed setup
     # variable is set by torchrun
     world_size = int(os.environ.get("WORLD_SIZE", 1))
@@ -238,11 +324,21 @@ def main(args):
     slack_token = os.getenv("TQDM_SLACK_TOKEN")
     slack_channel = os.getenv("TQDM_SLACK_CHANNEL")
 
-    pbar = tqdm(disable=False if (slack_token and slack_channel) and (rank == 0) else True)
-    if slack_token and slack_channel:
-        # Monkey patch tqdm write method to send messages directly to Slack
-        pbar.write = lambda msg: pbar.sio.client.chat_postMessage(channel=slack_channel, text=msg)
-    pbar.write(str(args))
+    pbar = None
+    if progress_hook is None:
+        pbar = tqdm(disable=False if (slack_token and slack_channel) and (rank == 0) else True)
+        if slack_token and slack_channel:
+            # Monkey patch tqdm write method to send messages directly to Slack
+            pbar.write = lambda msg: pbar.sio.client.chat_postMessage(channel=slack_channel, text=msg)
+
+    def log_line(message: str) -> None:
+        if pbar is not None:
+            pbar.write(message)
+        else:
+            print(message)
+        _emit_progress(progress_hook, event="log", message=message)
+
+    log_line(str(args))
 
     if rank == 0 and args.push_to_hub:
         login_to_hub()
@@ -320,7 +416,7 @@ def main(args):
             pin_memory=torch.cuda.is_available(),
             collate_fn=val_set.collate_fn,
         )
-        pbar.write(
+        log_line(
             f"Validation set loaded in {time.time() - st:.4}s ({len(val_set)} samples in {len(val_loader)} batches)"
         )
 
@@ -331,7 +427,7 @@ def main(args):
 
     # Resume weights
     if isinstance(args.resume, str):
-        pbar.write(f"Resuming {args.resume}")
+        log_line(f"Resuming {args.resume}")
         model.from_pretrained(args.resume)
 
     # Backbone freezing
@@ -352,11 +448,17 @@ def main(args):
         val_metric = TextMatch()
 
     if rank == 0 and args.test_only:
-        pbar.write("Running evaluation")
-        val_loss, exact_match, partial_match = evaluate(
-            model, device, val_loader, batch_transforms, val_metric, amp=args.amp
+        log_line("Running evaluation")
+        val_loss, exact_match, partial_match = evaluate_with_progress(
+            model,
+            device,
+            val_loader,
+            batch_transforms,
+            val_metric,
+            amp=args.amp,
+            progress_hook=progress_hook,
         )
-        pbar.write(f"Validation loss: {val_loss:.6} (Exact: {exact_match:.2%} | Partial: {partial_match:.2%})")
+        log_line(f"Validation loss: {val_loss:.6} (Exact: {exact_match:.2%} | Partial: {partial_match:.2%})")
         return
 
     st = time.time()
@@ -459,7 +561,7 @@ def main(args):
         collate_fn=train_set.collate_fn,
     )
     if rank == 0:
-        pbar.write(
+        log_line(
             f"Train set loaded in {time.time() - st:.4}s ({len(train_set)} samples in {len(train_loader)} batches)"
         )
 
@@ -598,27 +700,46 @@ def main(args):
             amp=args.amp,
             log=log_at_step,
             rank=rank,
+            progress_hook=progress_hook,
         )
 
         if rank == 0:
-            pbar.write(f"Epoch {epoch + 1}/{args.epochs} - Training loss: {train_loss:.6} | LR: {actual_lr:.6}")
+            log_line(f"Epoch {epoch + 1}/{args.epochs} - Training loss: {train_loss:.6} | LR: {actual_lr:.6}")
 
             # Validation loop at the end of each epoch
-            val_loss, exact_match, partial_match = evaluate(
-                model, device, val_loader, batch_transforms, val_metric, amp=args.amp, log=log_at_step
+            val_loss, exact_match, partial_match = evaluate_with_progress(
+                model,
+                device,
+                val_loader,
+                batch_transforms,
+                val_metric,
+                amp=args.amp,
+                log=log_at_step,
+                progress_hook=progress_hook,
             )
             if val_loss < min_loss:
                 # All processes should see same parameters as they all start from same
                 # random parameters and gradients are synchronized in backward passes.
                 # Therefore, saving it in one process is sufficient.
-                pbar.write(f"Validation loss decreased {min_loss:.6} --> {val_loss:.6}: saving state...")
+                log_line(f"Validation loss decreased {min_loss:.6} --> {val_loss:.6}: saving state...")
                 params = model.module if hasattr(model, "module") else model
 
                 torch.save(params.state_dict(), Path(args.output_dir) / f"{exp_name}.pt")
                 min_loss = val_loss
-            pbar.write(
+            log_line(
                 f"Epoch {epoch + 1}/{args.epochs} - Validation loss: {val_loss:.6} "
                 f"(Exact: {exact_match:.2%} | Partial: {partial_match:.2%})"
+            )
+            _emit_progress(
+                progress_hook,
+                event="epoch_end",
+                epoch=epoch + 1,
+                total_epochs=args.epochs,
+                train_loss=float(train_loss),
+                val_loss=float(val_loss),
+                lr=float(actual_lr),
+                exact=float(exact_match),
+                partial=float(partial_match),
             )
             # W&B
             if args.wb:
@@ -646,7 +767,7 @@ def main(args):
                 )
 
             if args.early_stop and early_stopper.early_stop(val_loss):
-                pbar.write("Training halted early due to reaching patience limit.")
+                log_line("Training halted early due to reaching patience limit.")
                 break
 
     if rank == 0:
@@ -779,6 +900,7 @@ def train_from_config(
     device: int | None = None,
     pretrained: bool = True,
     name: str | None = None,
+    progress_hook: ProgressHook | None = None,
 ) -> None:
     """Run training with simplified configuration, suitable for UI calls.
 
@@ -849,7 +971,7 @@ def train_from_config(
         find_lr=False,
     )
 
-    main(args)
+    main(args, progress_hook=progress_hook)
 
 
 if __name__ == "__main__":
