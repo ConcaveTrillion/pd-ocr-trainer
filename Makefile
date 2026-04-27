@@ -1,6 +1,7 @@
 .PHONY: install setup reset remove-venv reset-full upgrade-deps test lint \
 	py-lint py-lint-fix lint-fix format pre-commit-check ci build clean \
-	clean-logs clean-cache run run-verbose export-models help
+	clean-logs clean-cache run run-verbose export-models \
+	release-patch release-minor release-major _do-release help
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -144,5 +145,24 @@ clean-cache: ## Remove cache and temporary files
 	@echo "🧹 Clearing cache..."
 	rm -rf .cache/ 2>/dev/null || true
 	@echo "✅ Cache cleared!"
+
+release-patch: ## Bump patch version and create a git tag (e.g. 0.1.0 -> 0.1.1)
+	uv version --bump patch
+	@$(MAKE) --no-print-directory _do-release
+
+release-minor: ## Bump minor version and create a git tag (e.g. 0.1.0 -> 0.2.0)
+	uv version --bump minor
+	@$(MAKE) --no-print-directory _do-release
+
+release-major: ## Bump major version and create a git tag (e.g. 0.1.0 -> 1.0.0)
+	uv version --bump major
+	@$(MAKE) --no-print-directory _do-release
+
+_do-release:
+	@VERSION=$$(uv version --short); \
+	git add pyproject.toml uv.lock; \
+	git commit -m "chore: release v$$VERSION"; \
+	git tag "v$$VERSION"; \
+	echo "🏷️  Tagged v$$VERSION - push with: git push && git push --tags"
 
 .DEFAULT_GOAL := help
