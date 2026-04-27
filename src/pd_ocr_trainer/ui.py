@@ -1,5 +1,6 @@
 """NiceGUI training interface for OCR configuration and dataset management."""
 
+import gc
 import json
 import os
 import platform
@@ -7,6 +8,7 @@ import shutil
 import threading
 from collections import defaultdict
 from pathlib import Path
+from queue import Empty, Queue
 
 import torch
 from doctr.datasets import VOCABS
@@ -25,6 +27,35 @@ MODEL_NAME_PREFIX = "pd"
 BASE_OCR_PROFILE = "all"
 LEGACY_BASE_OCR_PROFILE = "base-ocr"
 DATASET_TASKS = ("detection", "recognition")
+
+
+def _available_cpu_count() -> int:
+    """Return CPU count visible to this process/container."""
+    if hasattr(os, "sched_getaffinity"):
+        return max(1, len(os.sched_getaffinity(0)))
+    return max(1, os.cpu_count() or 1)
+
+
+def _default_worker_count() -> int:
+    """Choose a conservative default that scales with available CPUs."""
+    cpu_count = _available_cpu_count()
+    if cpu_count <= 2:
+        return 1
+    return min(8, max(2, cpu_count // 2))
+
+
+def _release_cuda_memory() -> None:
+    """Best-effort CUDA cleanup after training ends or fails."""
+    gc.collect()
+    if not torch.cuda.is_available():
+        return
+    try:
+        torch.cuda.synchronize()
+    except Exception:
+        pass
+    torch.cuda.empty_cache()
+    if hasattr(torch.cuda, "ipc_collect"):
+        torch.cuda.ipc_collect()
 
 
 def get_os_data_parent() -> Path:
@@ -555,6 +586,7 @@ class DetectionTrainingConfig:
         self.arch = "db_resnet50"
         self.epochs = 100
         self.batch_size = 2
+        self.workers = _default_worker_count()
         self.learning_rate = 0.002
         self.pretrained = True
         self.model_name = _prefixed_model_name("detection", "model-finetuned")
@@ -585,7 +617,7 @@ class RecognitionTrainingConfig:
         self.vocab_library = default_vocab_library
         self.custom_characters = DEFAULT_CUSTOM_CHARACTERS
         self.vocab = build_custom_vocab_arg(self.vocab_library, self.custom_characters)
-        self.workers = 4
+        self.workers = _default_worker_count()
         self.device = 0 if torch.cuda.is_available() else None
 
     # Global state
@@ -978,6 +1010,14 @@ def create_ui():
                     ).classes("w-full")
 
                     ui.number(
+                        label="Workers",
+                        value=detection_config.workers,
+                        min=0,
+                        max=16,
+                        on_change=lambda v: setattr(detection_config, "workers", int(v.value)),
+                    ).classes("w-full")
+
+                    ui.number(
                         label="Learning Rate",
                         value=detection_config.learning_rate,
                         min=0.00001,
@@ -1173,6 +1213,40 @@ def create_ui():
                         ),
                     ).props("color=secondary")
 
+                    def export_vocab_file() -> None:
+                        # Refresh vocab to reflect any pending edits, then resolve to the
+                        # exact character set the trainer would use and write it as a
+                        # sidecar next to where the recognition .pt would land.
+                        recognition_config.vocab = build_custom_vocab_arg(
+                            recognition_config.vocab_library,
+                            recognition_config.custom_characters,
+                        )
+                        try:
+                            from .train_recog import resolve_vocab
+
+                            resolved = resolve_vocab(recognition_config.vocab)
+                        except Exception as exc:
+                            ui.notify(f"Failed to resolve vocab: {exc}", type="negative")
+                            return
+                        profile = _normalize_profile_name(model_profile_state["value"])
+                        out_dir = _model_output_dir(profile, "recognition")
+                        out_dir.mkdir(parents=True, exist_ok=True)
+                        vocab_path = out_dir / f"{recognition_config.model_name}.vocab"
+                        try:
+                            vocab_path.write_text(resolved, encoding="utf-8")
+                        except Exception as exc:
+                            ui.notify(f"Failed to write vocab file: {exc}", type="negative")
+                            return
+                        ui.notify(
+                            f"Exported {len(resolved)} chars to {vocab_path}",
+                            type="positive",
+                        )
+
+                    ui.button(
+                        "Export Vocab File",
+                        on_click=export_vocab_file,
+                    ).props("color=primary")
+
                     refresh_vocab_ui()
 
     # ==================== TRAINING OUTPUT SECTION ====================
@@ -1187,6 +1261,26 @@ def create_ui():
             .props("readonly")
             .classes("w-full h-64")
         )
+        ui_events: Queue = Queue()
+
+        def queue_ui_event(event: str, **payload) -> None:
+            ui_events.put((event, payload))
+
+        def flush_ui_events() -> None:
+            while True:
+                try:
+                    event, payload = ui_events.get_nowait()
+                except Empty:
+                    break
+
+                if event == "set_status":
+                    status_label.set_text(str(payload.get("text", "")))
+                elif event == "append_output":
+                    output_area.value += str(payload.get("text", ""))
+                    output_area.update()
+
+        # Process worker-thread UI events on the main UI thread.
+        ui.timer(0.1, flush_ui_events)
 
         def run_training(mode: str):
             """Run detection or recognition training in a background thread."""
@@ -1280,8 +1374,7 @@ def create_ui():
                             if event == "log":
                                 message = str(payload.get("message", ""))
                                 if message:
-                                    output_area.value += f"{message}\n"
-                                    output_area.update()
+                                    queue_ui_event("append_output", text=f"{message}\n")
                                 return
 
                             if event == "train_batch":
@@ -1289,8 +1382,9 @@ def create_ui():
                                 total = payload.get("total_batches")
                                 loss = float(payload.get("loss", 0.0))
                                 lr = float(payload.get("lr", 0.0))
-                                status_label.set_text(
-                                    f"⏳ Training batch {batch}/{total} · loss={loss:.4f} · lr={lr:.6f}"
+                                queue_ui_event(
+                                    "set_status",
+                                    text=f"⏳ Training batch {batch}/{total} · loss={loss:.4f} · lr={lr:.6f}",
                                 )
                                 return
 
@@ -1298,10 +1392,13 @@ def create_ui():
                                 batch = payload.get("batch")
                                 total = payload.get("total_batches")
                                 loss = float(payload.get("loss", 0.0))
-                                status_label.set_text(f"⏳ Validation batch {batch}/{total} · loss={loss:.4f}")
+                                queue_ui_event(
+                                    "set_status",
+                                    text=f"⏳ Validation batch {batch}/{total} · loss={loss:.4f}",
+                                )
 
                         if run_detection:
-                            status_label.set_text("⏳ Running detection fine-tuning...")
+                            queue_ui_event("set_status", text="⏳ Running detection fine-tuning...")
                             detect_from_config(
                                 train_path=selected_train_root / "detection",
                                 val_path=selected_val_root / "detection",
@@ -1309,17 +1406,17 @@ def create_ui():
                                 epochs=detection_config.epochs,
                                 batch_size=detection_config.batch_size,
                                 lr=detection_config.learning_rate,
+                                workers=detection_config.workers,
                                 pretrained=detection_config.pretrained,
                                 output_dir=str(detection_out_dir),
                                 device=detection_config.device,
                                 name=detection_config.model_name,
                                 progress_hook=ui_progress,
                             )
-                            output_area.value += "✅ Detection fine-tuning completed.\n"
-                            output_area.update()
+                            queue_ui_event("append_output", text="✅ Detection fine-tuning completed.\n")
 
                         if run_recognition:
-                            status_label.set_text("⏳ Running recognition fine-tuning...")
+                            queue_ui_event("set_status", text="⏳ Running recognition fine-tuning...")
                             train_from_config(
                                 train_path=selected_train_root / "recognition",
                                 val_path=selected_val_root / "recognition",
@@ -1343,20 +1440,21 @@ def create_ui():
                                 name=recognition_config.model_name,
                                 progress_hook=ui_progress,
                             )
-                            output_area.value += "✅ Recognition fine-tuning completed.\n"
-                            output_area.update()
+                            queue_ui_event("append_output", text="✅ Recognition fine-tuning completed.\n")
 
                         if not training_cancelled:
-                            status_label.set_text("✅ Training completed!")
-                            ui.notify("Training finished successfully!", type="positive")
-                            output_area.value += "\n✅ Training completed successfully!"
+                            queue_ui_event("set_status", text="✅ Training completed!")
+                            queue_ui_event("append_output", text="\n✅ Training completed successfully!")
                         else:
-                            status_label.set_text("⏹️ Training stopped by user")
+                            queue_ui_event("set_status", text="⏹️ Training stopped by user")
+                            queue_ui_event("append_output", text="\n⏹️ Training stopped by user.")
 
                     except Exception as e:
-                        status_label.set_text(f"❌ Error: {e}")
-                        output_area.value += f"\n\nError: {e}\n"
-                        ui.notify(str(e), type="negative")
+                        queue_ui_event("set_status", text=f"❌ Error: {e}")
+                        queue_ui_event("append_output", text=f"\n\nError: {e}\n")
+                    finally:
+                        _release_cuda_memory()
+                        training_thread = None
 
                 training_thread = threading.Thread(target=train_worker, daemon=True)
                 training_thread.start()

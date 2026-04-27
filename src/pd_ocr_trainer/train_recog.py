@@ -243,6 +243,7 @@ def evaluate(model, device, val_loader, batch_transforms, val_metric, amp=False,
     return val_loss, result["raw"], result["unicase"]
 
 
+@torch.no_grad()
 def evaluate_with_progress(
     model,
     device,
@@ -725,6 +726,13 @@ def main(args, progress_hook: ProgressHook | None = None):
                 params = model.module if hasattr(model, "module") else model
 
                 torch.save(params.state_dict(), Path(args.output_dir) / f"{exp_name}.pt")
+                # Persist the resolved vocab as a sidecar file so downstream
+                # consumers (e.g. the labeler) can build a matching predictor.
+                try:
+                    vocab_path = Path(args.output_dir) / f"{exp_name}.vocab"
+                    vocab_path.write_text(vocab, encoding="utf-8")
+                except Exception as exc:  # pragma: no cover - best effort
+                    log_line(f"Warning: failed to write vocab sidecar: {exc}")
                 min_loss = val_loss
             log_line(
                 f"Epoch {epoch + 1}/{args.epochs} - Validation loss: {val_loss:.6} "

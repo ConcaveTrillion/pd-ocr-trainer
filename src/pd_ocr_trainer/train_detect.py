@@ -209,6 +209,7 @@ def evaluate(model, device, val_loader, batch_transforms, val_metric, amp=False,
     return val_loss, recall, precision, mean_iou
 
 
+@torch.no_grad()
 def evaluate_with_progress(
     model,
     device,
