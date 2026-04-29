@@ -99,7 +99,7 @@ def record_lr(
     loss_recorder = []
 
     if amp:
-        scaler = torch.cuda.amp.GradScaler()
+        scaler = torch.amp.GradScaler("cuda")
 
     for batch_idx, (images, targets) in enumerate(train_loader):
         if torch.cuda.is_available():
@@ -110,7 +110,7 @@ def record_lr(
         # Forward, Backward & update
         optimizer.zero_grad()
         if amp:
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast("cuda"):
                 train_loss = model(images, targets)["loss"]
             scaler.scale(train_loss).backward()
             # Gradient clipping
@@ -154,7 +154,7 @@ def fit_one_epoch(
     progress_hook: ProgressHook | None = None,
 ):
     if amp:
-        scaler = torch.cuda.amp.GradScaler()
+        scaler = torch.amp.GradScaler("cuda")
 
     model.train()
     # Iterate over the batches of the dataset
@@ -168,7 +168,7 @@ def fit_one_epoch(
 
         optimizer.zero_grad()
         if amp:
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast("cuda"):
                 train_loss = model(images, targets)["loss"]
             scaler.scale(train_loss).backward()
             # Gradient clipping
@@ -220,7 +220,7 @@ def evaluate(model, device, val_loader, batch_transforms, val_metric, amp=False,
         images = images.to(device)
         images = batch_transforms(images)
         if amp:
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast("cuda"):
                 out = model(images, targets, return_preds=True)
         else:
             out = model(images, targets, return_preds=True)
@@ -263,7 +263,7 @@ def evaluate_with_progress(
         images = images.to(device)
         images = batch_transforms(images)
         if amp:
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast("cuda"):
                 out = model(images, targets, return_preds=True)
         else:
             out = model(images, targets, return_preds=True)

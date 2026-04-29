@@ -73,7 +73,7 @@ def record_lr(
     loss_recorder = []
 
     if amp:
-        scaler = torch.cuda.amp.GradScaler()
+        scaler = torch.amp.GradScaler("cuda")
 
     for batch_idx, (images, targets) in enumerate(train_loader):
         if torch.cuda.is_available():
@@ -83,7 +83,7 @@ def record_lr(
 
         optimizer.zero_grad()
         if amp:
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast("cuda"):
                 train_loss = model(images, targets)["loss"]
             scaler.scale(train_loss).backward()
             scaler.unscale_(optimizer)
@@ -122,7 +122,7 @@ def fit_one_epoch(
     progress_hook: ProgressHook | None = None,
 ):
     if amp:
-        scaler = torch.cuda.amp.GradScaler()
+        scaler = torch.amp.GradScaler("cuda")
 
     model.train()
     epoch_train_loss, batch_cnt = 0, 0
@@ -135,7 +135,7 @@ def fit_one_epoch(
 
         optimizer.zero_grad()
         if amp:
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast("cuda"):
                 train_loss = model(images, targets)["loss"]
             scaler.scale(train_loss).backward()
             scaler.unscale_(optimizer)
@@ -182,7 +182,7 @@ def evaluate(model, device, val_loader, batch_transforms, val_metric, amp=False,
         images = images.to(device)
         images = batch_transforms(images)
         if amp:
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast("cuda"):
                 out = model(images, targets, return_preds=True)
         else:
             out = model(images, targets, return_preds=True)
@@ -229,7 +229,7 @@ def evaluate_with_progress(
         images = images.to(device)
         images = batch_transforms(images)
         if amp:
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast("cuda"):
                 out = model(images, targets, return_preds=True)
         else:
             out = model(images, targets, return_preds=True)

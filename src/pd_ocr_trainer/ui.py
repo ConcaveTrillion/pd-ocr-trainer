@@ -7,6 +7,7 @@ import platform
 import shutil
 import threading
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 from queue import Empty, Queue
 
@@ -19,8 +20,8 @@ from pd_ocr_trainer.train_recog import train_from_config
 
 # Get the project root (parent of src directory)
 PROJECT_ROOT = Path(__file__).parent.parent.parent
-ML_TRAINING_DIR = PROJECT_ROOT / "ml-training"
-ML_VALIDATION_DIR = PROJECT_ROOT / "ml-validation"
+ML_TRAINING_DIR = Path(os.getenv("PD_OCR_TRAINER_ML_TRAINING_DIR", PROJECT_ROOT / "ml-training"))
+ML_VALIDATION_DIR = Path(os.getenv("PD_OCR_TRAINER_ML_VALIDATION_DIR", PROJECT_ROOT / "ml-validation"))
 APP_NAME = "pd-ocr-labeler"
 MODEL_STORE_DIRNAME = "pd-ml-models"
 MODEL_NAME_PREFIX = "pd"
@@ -76,11 +77,60 @@ def get_os_data_parent() -> Path:
     return base_dir
 
 
-APP_DATA_ROOT = get_os_data_parent() / APP_NAME
-SHARED_MODELS_DIR = get_os_data_parent() / MODEL_STORE_DIRNAME
+APP_DATA_ROOT = Path(os.getenv("PD_OCR_TRAINER_APP_DATA_ROOT", get_os_data_parent() / APP_NAME))
+SHARED_MODELS_DIR = Path(os.getenv("PD_OCR_TRAINER_SHARED_MODELS_DIR", get_os_data_parent() / MODEL_STORE_DIRNAME))
+TRAINER_SETTINGS_PATH = APP_DATA_ROOT / "trainer_settings.json"
 
 DEFAULT_VOCAB_LIBRARY = ["multilingual", "currency"]
 DEFAULT_CUSTOM_CHARACTERS = "⸺¡¿—‘’“”′″"
+
+DETECTION_ARCH_OPTIONS = [
+    "db_resnet34",
+    "db_resnet50",
+    "db_mobilenet_v3_large",
+    "linknet_resnet18",
+    "linknet_resnet34",
+    "linknet_resnet50",
+    "fast_tiny",
+    "fast_small",
+    "fast_base",
+]
+
+RECOGNITION_ARCH_OPTIONS = [
+    "crnn_vgg16_bn",
+    "crnn_mobilenet_v3_small",
+    "crnn_mobilenet_v3_large",
+    "sar_resnet31",
+    "master",
+    "vitstr_small",
+    "vitstr_base",
+    "parseq",
+    "viptr_tiny",
+]
+
+DETECTION_ARCH_HELP = {
+    "db_resnet34": "DBNet with ResNet-34 backbone: balanced speed/accuracy with lower compute than ResNet-50.",
+    "db_resnet50": "DBNet with ResNet-50 backbone: strong baseline for robust text detection quality.",
+    "db_mobilenet_v3_large": "DBNet with MobileNetV3-Large: lightweight and faster, usually best on smaller GPUs.",
+    "linknet_resnet18": "LinkNet with ResNet-18: efficient segmentation-style detector with lower parameter count.",
+    "linknet_resnet34": "LinkNet with ResNet-34: moderate compute/accuracy option in the LinkNet family.",
+    "linknet_resnet50": "LinkNet with ResNet-50: heavier LinkNet variant for stronger feature capacity.",
+    "fast_tiny": "FAST detector with tiny TextNet backbone: fastest FAST variant, lowest compute.",
+    "fast_small": "FAST detector with small TextNet backbone: speed/quality middle ground.",
+    "fast_base": "FAST detector with base TextNet backbone: strongest FAST variant, heavier than tiny/small.",
+}
+
+RECOGNITION_ARCH_HELP = {
+    "crnn_vgg16_bn": "CRNN with VGG16 backbone: classic strong baseline for text recognition.",
+    "crnn_mobilenet_v3_small": "CRNN with MobileNetV3-Small: very fast and lightweight recognizer.",
+    "crnn_mobilenet_v3_large": "CRNN with MobileNetV3-Large: still efficient with somewhat higher capacity.",
+    "sar_resnet31": "SAR with ResNet-31 encoder: attention-based recognizer for irregular text.",
+    "master": "MASTER recognizer: high-capacity transformer-style model, usually slower and heavier.",
+    "vitstr_small": "ViTSTR-Small: transformer recognizer with moderate compute.",
+    "vitstr_base": "ViTSTR-Base: larger ViTSTR variant with higher memory and compute needs.",
+    "parseq": "PARSeq recognizer: permuted autoregressive sequence model with strong accuracy-speed tradeoff.",
+    "viptr_tiny": "VIPTR-Tiny: compact modern recognizer focused on efficient inference.",
+}
 
 # Ensure directories exist
 ML_TRAINING_DIR.mkdir(exist_ok=True)
@@ -254,6 +304,11 @@ def _prefixed_model_name(model_type: str, base_name: str, profile: str = BASE_OC
     return f"{MODEL_NAME_PREFIX}-{normalized_profile}-{model_type}-{normalized}"
 
 
+def _default_model_timestamp() -> str:
+    """Return yyyymmddhh24 timestamp for default model names."""
+    return datetime.now().strftime("%Y%m%d%H")
+
+
 def _project_from_stem(stem: str) -> str:
     """Strip trailing digit-only segments from an image stem to recover the project ID."""
     parts = stem.split("_")
@@ -306,6 +361,7 @@ class ExportManager:
     def __init__(self) -> None:
         self.active_profile = _normalize_profile_name(BASE_OCR_PROFILE)
         self.assignments: dict[str, str | None] = {}
+        self.page_assignments: dict[tuple[str, str], str] = {}
         self.changed_keys: set[str] = set()
         self.scan()
 
@@ -359,6 +415,11 @@ class ExportManager:
                     break
 
         self.assignments = new_assignments
+        self.page_assignments = {
+            (key, page): split
+            for (key, page), split in self.page_assignments.items()
+            if key in self.assignments and page in set(self.get_export_pages(key)) and split in {"train", "val"}
+        }
         self.changed_keys = new_changed
 
     def get_by_split(self) -> dict[str, dict[str, list[str]]]:
@@ -374,14 +435,75 @@ class ExportManager:
             result[col][project].append(key)
         return {k: dict(v) for k, v in result.items()}
 
+    def get_export_pages_by_split(self) -> dict[str, dict[str, dict[str, list[str]]]]:
+        """Return pending export pages grouped as {split: {project: {key: [page_names]}}}."""
+        result: dict[str, dict[str, dict[str, list[str]]]] = {
+            "unassigned": defaultdict(lambda: defaultdict(list)),
+            "train": defaultdict(lambda: defaultdict(list)),
+            "val": defaultdict(lambda: defaultdict(list)),
+        }
+
+        for key in self.assignments:
+            project = key.split("/")[0]
+            pages = self.get_export_pages(key)
+            split = self.assignments.get(key)
+            if split in {"train", "val"}:
+                result[split][project][key].extend(pages)
+                continue
+
+            for page_name in pages:
+                page_split = self.page_assignments.get((key, page_name))
+                col = page_split if page_split in {"train", "val"} else "unassigned"
+                result[col][project][key].append(page_name)
+
+        return {
+            split: {
+                project: {key: sorted(pages) for key, pages in sorted(keys.items())}
+                for project, keys in sorted(projects.items())
+            }
+            for split, projects in result.items()
+        }
+
     def assign(self, key: str, target: str | None) -> None:
         if key in self.assignments:
             self.assignments[key] = target if target in {"train", "val"} else None
+            self.page_assignments = {(k, page): split for (k, page), split in self.page_assignments.items() if k != key}
+
+    def assign_page(self, key: str, page_name: str, target: str | None) -> None:
+        if key not in self.assignments:
+            return
+
+        pages = self.get_export_pages(key)
+        full_split = self.assignments.get(key)
+        if full_split in {"train", "val"}:
+            for page in pages:
+                self.page_assignments[(key, page)] = full_split
+            self.assignments[key] = None
+
+        if target in {"train", "val"}:
+            self.page_assignments[(key, page_name)] = target
+        else:
+            self.page_assignments.pop((key, page_name), None)
 
     def assign_project(self, project_id: str, target: str | None) -> None:
         for key in self.assignments:
             if key.startswith(f"{project_id}/"):
                 self.assignments[key] = target if target in {"train", "val"} else None
+                self.page_assignments = {
+                    (k, page): split for (k, page), split in self.page_assignments.items() if k != key
+                }
+
+    def assign_pages(self, pages: list[tuple[str, str]], target: str | None) -> None:
+        for key, page_name in pages:
+            self.assign_page(key, page_name, target)
+
+    def clear_split(self, split: str) -> None:
+        if split not in {"train", "val"}:
+            return
+        for key in list(self.assignments):
+            if self.assignments.get(key) == split:
+                self.assignments[key] = None
+        self.page_assignments = {(k, page): s for (k, page), s in self.page_assignments.items() if s != split}
 
     def is_changed(self, key: str) -> bool:
         return key in self.changed_keys
@@ -534,16 +656,31 @@ class ExportManager:
         include_recognition: bool = True,
     ) -> dict[str, int]:
         """Merge assigned DocTR exports into ML_TRAINING_DIR / ML_VALIDATION_DIR."""
-        to_copy = [(k, v) for k, v in self.assignments.items() if v in {"train", "val"}]
-        if not to_copy:
+        full_copy = [(k, v) for k, v in self.assignments.items() if v in {"train", "val"}]
+        page_copy = [
+            ((k, page), split) for (k, page), split in self.page_assignments.items() if split in {"train", "val"}
+        ]
+        if not full_copy and not page_copy:
             return {"copied": 0}
 
         task_flags = {
             "detection": include_detection,
             "recognition": include_recognition,
         }
+        plan: dict[tuple[str, str], set[str] | None] = {}
+        for key, split in full_copy:
+            plan[(key, split)] = None
+        for (key, page_name), split in page_copy:
+            bucket = plan.get((key, split))
+            if bucket is None and (key, split) in plan:
+                continue
+            if bucket is None:
+                bucket = set()
+                plan[(key, split)] = bucket
+            bucket.add(page_name)
+
         count = 0
-        for key, split in to_copy:
+        for (key, split), selected_pages in plan.items():
             src_root = self.export_path(key)
             dest_root = self.split_root("train" if split == "train" else "val")
             copied_any_task = False
@@ -558,6 +695,20 @@ class ExportManager:
                 dest_images_dir.mkdir(parents=True, exist_ok=True)
 
                 src_labels = self._load_json_map(src_labels_path)
+                if selected_pages is not None:
+                    if task == "detection":
+                        src_labels = {k: v for k, v in src_labels.items() if k in selected_pages}
+                    else:
+                        selected_stems = {Path(name).stem for name in selected_pages}
+                        src_labels = {
+                            k: v
+                            for k, v in src_labels.items()
+                            if any(Path(k).stem.startswith(f"{stem}_") for stem in selected_stems)
+                        }
+
+                if not src_labels:
+                    continue
+
                 dest_labels_path = dest_root / task / "labels.json"
                 dest_labels = self._load_json_map(dest_labels_path)
 
@@ -572,7 +723,12 @@ class ExportManager:
                 count += 1
 
             if copied_any_task:
-                self.assignments[key] = None
+                if selected_pages is None:
+                    self.assignments[key] = None
+                    self.page_assignments = {(k, page): s for (k, page), s in self.page_assignments.items() if k != key}
+                else:
+                    for page_name in selected_pages:
+                        self.page_assignments.pop((key, page_name), None)
 
         self.scan()
         return {"copied": count}
@@ -588,8 +744,17 @@ class DetectionTrainingConfig:
         self.batch_size = 2
         self.workers = _default_worker_count()
         self.learning_rate = 0.002
+        self.weight_decay = 0.0
+        self.optimizer = "adam"
+        self.scheduler = "poly"
+        self.input_size = 1024
+        self.rotation = False
+        self.amp = False
         self.pretrained = True
-        self.model_name = _prefixed_model_name("detection", "model-finetuned")
+        self.early_stop = False
+        self.early_stop_epochs = 5
+        self.early_stop_delta = 0.01
+        self.model_name = _prefixed_model_name("detection", f"model-finetuned-{_default_model_timestamp()}")
         self.device = 0 if torch.cuda.is_available() else None
 
 
@@ -607,10 +772,11 @@ class RecognitionTrainingConfig:
         self.scheduler = "cosine"
         self.input_size = 32
         self.pretrained = True
-        self.model_name = _prefixed_model_name("recognition", "model-finetuned")
+        self.model_name = _prefixed_model_name("recognition", f"model-finetuned-{_default_model_timestamp()}")
         self.amp = False
         self.early_stop = False
         self.early_stop_epochs = 5
+        self.early_stop_delta = 0.01
         default_vocab_library = [name for name in DEFAULT_VOCAB_LIBRARY if name in VOCABS]
         if not default_vocab_library:
             default_vocab_library = ["french"] if "french" in VOCABS else [next(iter(VOCABS))]
@@ -619,6 +785,138 @@ class RecognitionTrainingConfig:
         self.vocab = build_custom_vocab_arg(self.vocab_library, self.custom_characters)
         self.workers = _default_worker_count()
         self.device = 0 if torch.cuda.is_available() else None
+
+
+def _reset_model_names_to_defaults() -> None:
+    """Recompute model names at load time; names are never persisted."""
+    detection_config.model_name = _prefixed_model_name("detection", f"model-finetuned-{_default_model_timestamp()}")
+    recognition_config.model_name = _prefixed_model_name("recognition", f"model-finetuned-{_default_model_timestamp()}")
+
+
+def _detection_settings_payload() -> dict:
+    return {
+        "arch": detection_config.arch,
+        "epochs": int(detection_config.epochs),
+        "batch_size": int(detection_config.batch_size),
+        "workers": int(detection_config.workers),
+        "learning_rate": float(detection_config.learning_rate),
+        "weight_decay": float(detection_config.weight_decay),
+        "optimizer": detection_config.optimizer,
+        "scheduler": detection_config.scheduler,
+        "input_size": int(detection_config.input_size),
+        "rotation": bool(detection_config.rotation),
+        "amp": bool(detection_config.amp),
+        "pretrained": bool(detection_config.pretrained),
+        "early_stop": bool(detection_config.early_stop),
+        "early_stop_epochs": int(detection_config.early_stop_epochs),
+        "early_stop_delta": float(detection_config.early_stop_delta),
+    }
+
+
+def _recognition_settings_payload() -> dict:
+    return {
+        "arch": recognition_config.arch,
+        "epochs": int(recognition_config.epochs),
+        "batch_size": int(recognition_config.batch_size),
+        "learning_rate": float(recognition_config.learning_rate),
+        "weight_decay": float(recognition_config.weight_decay),
+        "optimizer": recognition_config.optimizer,
+        "scheduler": recognition_config.scheduler,
+        "input_size": int(recognition_config.input_size),
+        "workers": int(recognition_config.workers),
+        "pretrained": bool(recognition_config.pretrained),
+        "amp": bool(recognition_config.amp),
+        "early_stop": bool(recognition_config.early_stop),
+        "early_stop_epochs": int(recognition_config.early_stop_epochs),
+        "early_stop_delta": float(recognition_config.early_stop_delta),
+        "vocab_library": list(recognition_config.vocab_library),
+        "custom_characters": recognition_config.custom_characters,
+    }
+
+
+def _save_trainer_settings() -> None:
+    payload = {
+        "version": 1,
+        "detection": _detection_settings_payload(),
+        "recognition": _recognition_settings_payload(),
+    }
+    TRAINER_SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(TRAINER_SETTINGS_PATH, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+
+
+def _apply_detection_settings(data: dict) -> None:
+    detection_config.arch = str(data.get("arch", detection_config.arch))
+    detection_config.epochs = int(data.get("epochs", detection_config.epochs))
+    detection_config.batch_size = int(data.get("batch_size", detection_config.batch_size))
+    detection_config.workers = int(data.get("workers", detection_config.workers))
+    detection_config.learning_rate = float(data.get("learning_rate", detection_config.learning_rate))
+    detection_config.weight_decay = float(data.get("weight_decay", detection_config.weight_decay))
+    detection_config.optimizer = str(data.get("optimizer", detection_config.optimizer))
+    detection_config.scheduler = str(data.get("scheduler", detection_config.scheduler))
+    detection_config.input_size = int(data.get("input_size", detection_config.input_size))
+    detection_config.rotation = bool(data.get("rotation", detection_config.rotation))
+    detection_config.amp = bool(data.get("amp", detection_config.amp))
+    detection_config.pretrained = bool(data.get("pretrained", detection_config.pretrained))
+    detection_config.early_stop = bool(data.get("early_stop", detection_config.early_stop))
+    detection_config.early_stop_epochs = int(data.get("early_stop_epochs", detection_config.early_stop_epochs))
+    detection_config.early_stop_delta = float(data.get("early_stop_delta", detection_config.early_stop_delta))
+
+
+def _apply_recognition_settings(data: dict) -> None:
+    recognition_config.arch = str(data.get("arch", recognition_config.arch))
+    recognition_config.epochs = int(data.get("epochs", recognition_config.epochs))
+    recognition_config.batch_size = int(data.get("batch_size", recognition_config.batch_size))
+    recognition_config.learning_rate = float(data.get("learning_rate", recognition_config.learning_rate))
+    recognition_config.weight_decay = float(data.get("weight_decay", recognition_config.weight_decay))
+    recognition_config.optimizer = str(data.get("optimizer", recognition_config.optimizer))
+    recognition_config.scheduler = str(data.get("scheduler", recognition_config.scheduler))
+    recognition_config.input_size = int(data.get("input_size", recognition_config.input_size))
+    recognition_config.workers = int(data.get("workers", recognition_config.workers))
+    recognition_config.pretrained = bool(data.get("pretrained", recognition_config.pretrained))
+    recognition_config.amp = bool(data.get("amp", recognition_config.amp))
+    recognition_config.early_stop = bool(data.get("early_stop", recognition_config.early_stop))
+    recognition_config.early_stop_epochs = int(data.get("early_stop_epochs", recognition_config.early_stop_epochs))
+    recognition_config.early_stop_delta = float(data.get("early_stop_delta", recognition_config.early_stop_delta))
+
+    loaded_vocab_library = data.get("vocab_library")
+    if isinstance(loaded_vocab_library, list):
+        cleaned = [str(name) for name in loaded_vocab_library if isinstance(name, str) and name in VOCABS]
+        if cleaned:
+            recognition_config.vocab_library = cleaned
+
+    loaded_custom_characters = data.get("custom_characters")
+    if isinstance(loaded_custom_characters, str):
+        recognition_config.custom_characters = loaded_custom_characters
+
+    recognition_config.vocab = build_custom_vocab_arg(
+        recognition_config.vocab_library,
+        recognition_config.custom_characters,
+    )
+
+
+def _load_trainer_settings() -> None:
+    if not TRAINER_SETTINGS_PATH.exists():
+        _reset_model_names_to_defaults()
+        return
+
+    try:
+        with open(TRAINER_SETTINGS_PATH, encoding="utf-8") as f:
+            payload = json.load(f)
+        if not isinstance(payload, dict):
+            _reset_model_names_to_defaults()
+            return
+
+        detection_data = payload.get("detection", {})
+        recognition_data = payload.get("recognition", {})
+        if isinstance(detection_data, dict):
+            _apply_detection_settings(detection_data)
+        if isinstance(recognition_data, dict):
+            _apply_recognition_settings(recognition_data)
+    except Exception:
+        pass
+    finally:
+        _reset_model_names_to_defaults()
 
     # Global state
     _model_output_dir(BASE_OCR_PROFILE, "detection").mkdir(parents=True, exist_ok=True)
@@ -629,6 +927,7 @@ _migrate_legacy_dataset_layout()
 export_manager = ExportManager()
 detection_config = DetectionTrainingConfig()
 recognition_config = RecognitionTrainingConfig()
+_load_trainer_settings()
 training_thread: threading.Thread | None = None
 training_cancelled = False
 
@@ -645,6 +944,22 @@ def create_ui():
     with ui.column().classes("w-full"):
         output_labels: dict[str, object] = {}
         dataset_scope_label: dict[str, object] = {}
+
+        def _safe_int(value, fallback: int) -> int:
+            if value in (None, ""):
+                return fallback
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return fallback
+
+        def _safe_float(value, fallback: float) -> float:
+            if value in (None, ""):
+                return fallback
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return fallback
 
         # ==================== PROFILE SECTION ====================
         with ui.card().classes("w-full"):
@@ -764,6 +1079,15 @@ def create_ui():
                 key = dragging.get("key")
                 if dtype == "export" and isinstance(key, str):
                     export_manager.assign(key, target)
+                elif dtype == "export_page" and isinstance(key, tuple) and len(key) == 2:
+                    export_key, page_name = key
+                    if isinstance(export_key, str) and isinstance(page_name, str):
+                        export_manager.assign_page(export_key, page_name, target)
+                elif dtype == "project_pages" and isinstance(key, list):
+                    page_tuples = [k for k in key if isinstance(k, tuple) and len(k) == 2]
+                    normalized = [(k, p) for k, p in page_tuples if isinstance(k, str) and isinstance(p, str)]
+                    if normalized:
+                        export_manager.assign_pages(normalized, target)
                 elif dtype == "project" and isinstance(key, str):
                     export_manager.assign_project(key, target)
                 elif dtype == "existing" and isinstance(key, str):
@@ -790,8 +1114,8 @@ def create_ui():
 
             def render_column(col_id: str, container) -> None:
                 container.clear()
-                by_split = export_manager.get_by_split()
-                pending_projects = dict(sorted(by_split.get(col_id, {}).items()))
+                by_split_pages = export_manager.get_export_pages_by_split()
+                pending_projects = dict(sorted(by_split_pages.get(col_id, {}).items()))
 
                 # Existing data already in ml-training / ml-validation.
                 existing_projects: dict[str, int] = {}
@@ -807,22 +1131,33 @@ def create_ui():
                         return
 
                     # --- Pending (from labeler export root) ---
-                    for project_id, keys in pending_projects.items():
-                        pages_by_key = {key: export_manager.get_export_pages(key) for key in sorted(keys)}
+                    for project_id, pages_by_key in pending_projects.items():
                         page_count = sum(len(pages) for pages in pages_by_key.values())
                         exp_label = f"{project_id}  ·  {page_count} pages  [export]"
                         with ui.expansion(exp_label).classes(
                             "w-full mb-1 bg-slate-50 border border-slate-200 rounded"
                         ) as exp_card:
-                            exp_card.props("draggable=true dense")
-                            exp_card.on(
-                                "dragstart",
-                                lambda e, p=project_id: (
-                                    dragging.__setitem__("type", "project"),
-                                    dragging.__setitem__("key", p),
-                                ),
-                            )
+                            exp_card.props("dense")
                             with ui.column().classes("w-full gap-1 pl-2"):
+                                with ui.card().classes(
+                                    "w-full mb-1 px-2 py-1 border border-dashed rounded shadow-none bg-slate-100 text-slate-700 cursor-grab"
+                                ) as project_drag_row:
+                                    project_drag_row.props("draggable=true")
+                                    project_drag_row.on(
+                                        "dragstart",
+                                        lambda e, pages=pages_by_key: (
+                                            dragging.__setitem__("type", "project_pages"),
+                                            dragging.__setitem__(
+                                                "key",
+                                                [
+                                                    (k, page_name)
+                                                    for k, page_names in pages.items()
+                                                    for page_name in page_names
+                                                ],
+                                            ),
+                                        ),
+                                    )
+                                    ui.label("Drag to move all pages").classes("text-xs")
                                 for key, pages in pages_by_key.items():
                                     changed = export_manager.is_changed(key)
                                     for page_name in pages:
@@ -834,10 +1169,10 @@ def create_ui():
                                         with ui.card().classes(row_cls) as export_row:
                                             export_row.props("draggable=true")
                                             export_row.on(
-                                                "dragstart",
-                                                lambda e, k=key: (
-                                                    dragging.__setitem__("type", "export"),
-                                                    dragging.__setitem__("key", k),
+                                                "dragstart.stop",
+                                                lambda e, k=key, p=page_name: (
+                                                    dragging.__setitem__("type", "export_page"),
+                                                    dragging.__setitem__("key", (k, p)),
                                                 ),
                                             )
                                             ui.label(page_name).classes("text-xs font-mono")
@@ -855,16 +1190,21 @@ def create_ui():
                             with ui.expansion(exp_label).classes(
                                 "w-full mb-1 bg-slate-50 border border-slate-200 rounded"
                             ) as exp_card:
-                                exp_card.props("draggable=true dense")
-                                exp_card.on(
-                                    "dragstart",
-                                    lambda e, p=project_id, s=col_id: (
-                                        dragging.__setitem__("type", "existing"),
-                                        dragging.__setitem__("key", p),
-                                        dragging.__setitem__("from_split", s),
-                                    ),
-                                )
+                                exp_card.props("dense")
                                 with ui.column().classes("w-full gap-0 pl-2"):
+                                    with ui.card().classes(
+                                        "w-full mb-1 px-2 py-1 border border-dashed rounded shadow-none bg-slate-100 text-slate-700 cursor-grab"
+                                    ) as project_drag_row:
+                                        project_drag_row.props("draggable=true")
+                                        project_drag_row.on(
+                                            "dragstart",
+                                            lambda e, p=project_id, s=col_id: (
+                                                dragging.__setitem__("type", "existing"),
+                                                dragging.__setitem__("key", p),
+                                                dragging.__setitem__("from_split", s),
+                                            ),
+                                        )
+                                        ui.label("Drag to move all pages").classes("text-xs")
                                     for img_name in pages:
                                         selected = (col_id, img_name) in selected_existing_pages
                                         selected_cls = (
@@ -884,7 +1224,7 @@ def create_ui():
                                                 ),
                                             )
                                             page_row.on(
-                                                "dragstart",
+                                                "dragstart.stop",
                                                 lambda e, p=img_name, s=col_id: (
                                                     dragging.__setitem__("type", "existing_page"),
                                                     dragging.__setitem__(
@@ -917,25 +1257,23 @@ def create_ui():
 
             with ui.row().classes("w-full gap-4"):
                 for col_id, col_title, col_border_cls in COLUMN_DEFS:
-                    with ui.card().classes(f"flex-1 min-h-40 border-2 {col_border_cls}"):
+                    with ui.card().classes(f"flex-1 min-h-40 border-2 {col_border_cls}") as column_card:
                         with ui.row().classes("items-center justify-between w-full mb-1"):
                             ui.label(col_title).classes("font-semibold text-sm")
                             if col_id != "unassigned":
 
                                 def _make_clear(t: str):
                                     def _clear():
-                                        for k in list(export_manager.assignments):
-                                            if export_manager.assignments.get(k) == t:
-                                                export_manager.assign(k, None)
+                                        export_manager.clear_split(t)
                                         refresh_kanban()
 
                                     return _clear
 
                                 ui.button("Clear", on_click=_make_clear(col_id)).props("size=xs color=negative flat")
+                        column_card.on("dragover.prevent", lambda e: None)
+                        column_card.on("drop", lambda e, t=col_id: handle_drop(t))
                         drop_area = ui.column().classes("w-full gap-1 min-h-16")
                         col_containers[col_id] = drop_area
-                        drop_area.on("dragover.prevent", lambda e: None)
-                        drop_area.on("drop", lambda e, t=col_id: handle_drop(t))
 
             with ui.row().classes("items-center gap-4 mt-3"):
                 ui.button(
@@ -970,6 +1308,16 @@ def create_ui():
             refresh_kanban()
 
         # ==================== TRAINING CONFIG SECTION ====================
+        with ui.row().classes("w-full mb-2"):
+            ui.button(
+                "Start Full Training (Detection -> Recognition)",
+                on_click=lambda: run_training("both"),
+            ).props("color=primary")
+            ui.button(
+                "Save Settings",
+                on_click=lambda: (_save_trainer_settings(), ui.notify("Settings saved.", type="positive")),
+            ).props("color=secondary")
+
         with ui.row().classes("w-full gap-4 items-start"):
             with ui.card().classes("flex-1"):
                 with ui.row().classes("w-full items-center justify-between"):
@@ -986,11 +1334,29 @@ def create_ui():
                 refresh_model_output_labels()
 
                 with ui.expansion("Configuration", icon="tune").classes("w-full"):
+                    detection_arch_help_label = ui.label(
+                        DETECTION_ARCH_HELP.get(detection_config.arch, "Select an architecture to see details.")
+                    ).classes("text-xs text-gray-600")
+
+                    with ui.row().classes("items-center gap-2"):
+                        ui.label("Architecture").classes("text-sm")
+                        with ui.icon("help_outline").classes("text-gray-500 cursor-help"):
+                            ui.tooltip(
+                                "Architecture notes update below when you change the selection. "
+                                "Summaries are based on docTR docs and model zoo references."
+                            )
+
+                    def _on_detection_arch_change(event):
+                        detection_config.arch = event.value
+                        detection_arch_help_label.set_text(
+                            DETECTION_ARCH_HELP.get(event.value, "No details available for this architecture.")
+                        )
+
                     ui.select(
-                        label="Architecture",
-                        options=["db_resnet50"],
+                        label="",
+                        options=DETECTION_ARCH_OPTIONS,
                         value=detection_config.arch,
-                        on_change=lambda v: setattr(detection_config, "arch", v.value),
+                        on_change=_on_detection_arch_change,
                     ).classes("w-full")
 
                     ui.number(
@@ -998,7 +1364,11 @@ def create_ui():
                         value=detection_config.epochs,
                         min=1,
                         max=300,
-                        on_change=lambda v: setattr(detection_config, "epochs", int(v.value)),
+                        on_change=lambda v: setattr(
+                            detection_config,
+                            "epochs",
+                            _safe_int(v.value, detection_config.epochs),
+                        ),
                     ).classes("w-full")
 
                     ui.number(
@@ -1006,7 +1376,11 @@ def create_ui():
                         value=detection_config.batch_size,
                         min=1,
                         max=64,
-                        on_change=lambda v: setattr(detection_config, "batch_size", int(v.value)),
+                        on_change=lambda v: setattr(
+                            detection_config,
+                            "batch_size",
+                            _safe_int(v.value, detection_config.batch_size),
+                        ),
                     ).classes("w-full")
 
                     ui.number(
@@ -1014,7 +1388,11 @@ def create_ui():
                         value=detection_config.workers,
                         min=0,
                         max=16,
-                        on_change=lambda v: setattr(detection_config, "workers", int(v.value)),
+                        on_change=lambda v: setattr(
+                            detection_config,
+                            "workers",
+                            _safe_int(v.value, detection_config.workers),
+                        ),
                     ).classes("w-full")
 
                     ui.number(
@@ -1024,13 +1402,105 @@ def create_ui():
                         max=0.1,
                         step=0.0001,
                         format="%.5f",
-                        on_change=lambda v: setattr(detection_config, "learning_rate", float(v.value)),
+                        on_change=lambda v: setattr(
+                            detection_config,
+                            "learning_rate",
+                            _safe_float(v.value, detection_config.learning_rate),
+                        ),
+                    ).classes("w-full")
+
+                    ui.number(
+                        label="Weight Decay",
+                        value=detection_config.weight_decay,
+                        min=0,
+                        max=0.1,
+                        step=0.001,
+                        format="%.4f",
+                        on_change=lambda v: setattr(
+                            detection_config,
+                            "weight_decay",
+                            _safe_float(v.value, detection_config.weight_decay),
+                        ),
+                    ).classes("w-full")
+
+                    ui.select(
+                        label="Optimizer",
+                        options=["adam", "adamw"],
+                        value=detection_config.optimizer,
+                        on_change=lambda v: setattr(detection_config, "optimizer", v.value),
+                    ).classes("w-full")
+
+                    ui.select(
+                        label="Scheduler",
+                        options=["cosine", "onecycle", "poly"],
+                        value=detection_config.scheduler,
+                        on_change=lambda v: setattr(detection_config, "scheduler", v.value),
+                    ).classes("w-full")
+
+                    ui.checkbox(
+                        text="Mixed Precision (AMP)",
+                        value=detection_config.amp,
+                        on_change=lambda v: setattr(detection_config, "amp", v.value),
                     ).classes("w-full")
 
                     ui.checkbox(
                         text="Use Pretrained Weights",
                         value=detection_config.pretrained,
                         on_change=lambda v: setattr(detection_config, "pretrained", v.value),
+                    ).classes("w-full")
+
+                    ui.checkbox(
+                        text="Early Stopping",
+                        value=detection_config.early_stop,
+                        on_change=lambda v: setattr(detection_config, "early_stop", v.value),
+                    ).classes("w-full")
+
+                    ui.number(
+                        label="Early Stop Patience",
+                        value=detection_config.early_stop_epochs,
+                        min=1,
+                        max=20,
+                        on_change=lambda v: setattr(
+                            detection_config,
+                            "early_stop_epochs",
+                            _safe_int(v.value, detection_config.early_stop_epochs),
+                        ),
+                    ).classes("w-full")
+
+                    ui.number(
+                        label="Early Stop Delta",
+                        value=detection_config.early_stop_delta,
+                        min=0,
+                        max=1,
+                        step=0.001,
+                        format="%.3f",
+                        on_change=lambda v: setattr(
+                            detection_config,
+                            "early_stop_delta",
+                            _safe_float(v.value, detection_config.early_stop_delta),
+                        ),
+                    ).classes("w-full")
+
+                    ui.separator().classes("my-2")
+                    ui.label("Advanced").classes("text-sm font-medium")
+
+                    ui.number(
+                        label="Input Size",
+                        value=detection_config.input_size,
+                        min=256,
+                        max=2048,
+                        step=32,
+                        on_change=lambda v: setattr(
+                            detection_config,
+                            "input_size",
+                            _safe_int(v.value, detection_config.input_size),
+                        ),
+                    ).classes("w-full")
+
+                    ui.checkbox(
+                        text="Enable Rotation",
+                        value=detection_config.rotation,
+                        on_change=lambda v: setattr(detection_config, "rotation", v.value),
                     ).classes("w-full")
 
                     ui.input(
@@ -1054,15 +1524,29 @@ def create_ui():
                 refresh_model_output_labels()
 
                 with ui.expansion("Configuration", icon="tune").classes("w-full"):
+                    recognition_arch_help_label = ui.label(
+                        RECOGNITION_ARCH_HELP.get(recognition_config.arch, "Select an architecture to see details.")
+                    ).classes("text-xs text-gray-600")
+
+                    with ui.row().classes("items-center gap-2"):
+                        ui.label("Architecture").classes("text-sm")
+                        with ui.icon("help_outline").classes("text-gray-500 cursor-help"):
+                            ui.tooltip(
+                                "Architecture notes update below when you change the selection. "
+                                "Summaries are based on docTR docs and model zoo references."
+                            )
+
+                    def _on_recognition_arch_change(event):
+                        recognition_config.arch = event.value
+                        recognition_arch_help_label.set_text(
+                            RECOGNITION_ARCH_HELP.get(event.value, "No details available for this architecture.")
+                        )
+
                     ui.select(
-                        label="Architecture",
-                        options=[
-                            "crnn_vgg16_bn",
-                            "crnn_mobilenet_v3_small",
-                            "crnn_mobilenet_v3_large",
-                        ],
+                        label="",
+                        options=RECOGNITION_ARCH_OPTIONS,
                         value=recognition_config.arch,
-                        on_change=lambda v: setattr(recognition_config, "arch", v.value),
+                        on_change=_on_recognition_arch_change,
                     ).classes("w-full")
 
                     ui.number(
@@ -1070,7 +1554,11 @@ def create_ui():
                         value=recognition_config.epochs,
                         min=1,
                         max=300,
-                        on_change=lambda v: setattr(recognition_config, "epochs", int(v.value)),
+                        on_change=lambda v: setattr(
+                            recognition_config,
+                            "epochs",
+                            _safe_int(v.value, recognition_config.epochs),
+                        ),
                     ).classes("w-full")
 
                     ui.number(
@@ -1078,7 +1566,11 @@ def create_ui():
                         value=recognition_config.batch_size,
                         min=1,
                         max=512,
-                        on_change=lambda v: setattr(recognition_config, "batch_size", int(v.value)),
+                        on_change=lambda v: setattr(
+                            recognition_config,
+                            "batch_size",
+                            _safe_int(v.value, recognition_config.batch_size),
+                        ),
                     ).classes("w-full")
 
                     ui.number(
@@ -1088,7 +1580,11 @@ def create_ui():
                         max=0.1,
                         step=0.0001,
                         format="%.5f",
-                        on_change=lambda v: setattr(recognition_config, "learning_rate", float(v.value)),
+                        on_change=lambda v: setattr(
+                            recognition_config,
+                            "learning_rate",
+                            _safe_float(v.value, recognition_config.learning_rate),
+                        ),
                     ).classes("w-full")
 
                     ui.number(
@@ -1098,7 +1594,11 @@ def create_ui():
                         max=0.1,
                         step=0.001,
                         format="%.4f",
-                        on_change=lambda v: setattr(recognition_config, "weight_decay", float(v.value)),
+                        on_change=lambda v: setattr(
+                            recognition_config,
+                            "weight_decay",
+                            _safe_float(v.value, recognition_config.weight_decay),
+                        ),
                     ).classes("w-full")
 
                     ui.select(
@@ -1121,7 +1621,11 @@ def create_ui():
                         min=16,
                         max=64,
                         step=4,
-                        on_change=lambda v: setattr(recognition_config, "input_size", int(v.value)),
+                        on_change=lambda v: setattr(
+                            recognition_config,
+                            "input_size",
+                            _safe_int(v.value, recognition_config.input_size),
+                        ),
                     ).classes("w-full")
 
                     ui.number(
@@ -1129,7 +1633,11 @@ def create_ui():
                         value=recognition_config.workers,
                         min=0,
                         max=16,
-                        on_change=lambda v: setattr(recognition_config, "workers", int(v.value)),
+                        on_change=lambda v: setattr(
+                            recognition_config,
+                            "workers",
+                            _safe_int(v.value, recognition_config.workers),
+                        ),
                     ).classes("w-full")
 
                     ui.checkbox(
@@ -1155,7 +1663,25 @@ def create_ui():
                         value=recognition_config.early_stop_epochs,
                         min=1,
                         max=20,
-                        on_change=lambda v: setattr(recognition_config, "early_stop_epochs", int(v.value)),
+                        on_change=lambda v: setattr(
+                            recognition_config,
+                            "early_stop_epochs",
+                            _safe_int(v.value, recognition_config.early_stop_epochs),
+                        ),
+                    ).classes("w-full")
+
+                    ui.number(
+                        label="Early Stop Delta",
+                        value=recognition_config.early_stop_delta,
+                        min=0,
+                        max=1,
+                        step=0.001,
+                        format="%.3f",
+                        on_change=lambda v: setattr(
+                            recognition_config,
+                            "early_stop_delta",
+                            _safe_float(v.value, recognition_config.early_stop_delta),
+                        ),
                     ).classes("w-full")
 
                     ui.input(
@@ -1283,7 +1809,7 @@ def create_ui():
         ui.timer(0.1, flush_ui_events)
 
         def run_training(mode: str):
-            """Run detection or recognition training in a background thread."""
+            """Run detection, recognition, or both sequentially in a background thread."""
             global training_thread, training_cancelled
 
             if training_thread and training_thread.is_alive():
@@ -1302,8 +1828,8 @@ def create_ui():
                     return 0
 
             try:
-                run_detection = mode == "detection"
-                run_recognition = mode == "recognition"
+                run_detection = mode in {"detection", "both"}
+                run_recognition = mode in {"recognition", "both"}
                 selected_profile = _normalize_profile_name(model_profile_state["value"])
                 detection_out_dir = _model_output_dir(selected_profile, "detection")
                 recognition_out_dir = _model_output_dir(selected_profile, "recognition")
@@ -1353,7 +1879,10 @@ def create_ui():
                         recognition_config.custom_characters,
                     )
 
-                if run_detection:
+                if run_detection and run_recognition:
+                    status_label.set_text("⏳ Training starting (detection -> recognition)...")
+                    output_area.value = "Starting training...\n\n[1/2] Detection\n"
+                elif run_detection:
                     status_label.set_text("⏳ Training starting (detection)...")
                     output_area.value = "Starting training...\n\n[1/1] Detection\n"
                 else:
@@ -1406,7 +1935,16 @@ def create_ui():
                                 epochs=detection_config.epochs,
                                 batch_size=detection_config.batch_size,
                                 lr=detection_config.learning_rate,
+                                weight_decay=detection_config.weight_decay,
+                                optimizer=detection_config.optimizer,
+                                scheduler=detection_config.scheduler,
+                                input_size=detection_config.input_size,
+                                rotation=detection_config.rotation,
                                 workers=detection_config.workers,
+                                amp=detection_config.amp,
+                                early_stop=detection_config.early_stop,
+                                early_stop_epochs=detection_config.early_stop_epochs,
+                                early_stop_delta=detection_config.early_stop_delta,
                                 pretrained=detection_config.pretrained,
                                 output_dir=str(detection_out_dir),
                                 device=detection_config.device,
@@ -1416,6 +1954,8 @@ def create_ui():
                             queue_ui_event("append_output", text="✅ Detection fine-tuning completed.\n")
 
                         if run_recognition:
+                            if run_detection:
+                                queue_ui_event("append_output", text="\n[2/2] Recognition\n")
                             queue_ui_event("set_status", text="⏳ Running recognition fine-tuning...")
                             train_from_config(
                                 train_path=selected_train_root / "recognition",
@@ -1433,7 +1973,7 @@ def create_ui():
                                 amp=recognition_config.amp,
                                 early_stop=recognition_config.early_stop,
                                 early_stop_epochs=recognition_config.early_stop_epochs,
-                                early_stop_delta=0.01,
+                                early_stop_delta=recognition_config.early_stop_delta,
                                 output_dir=str(recognition_out_dir),
                                 device=recognition_config.device,
                                 pretrained=recognition_config.pretrained,
@@ -1482,7 +2022,10 @@ def main():
     # CLI entrypoints can fail with NiceGUI auto-reload subprocess startup;
     # keep reload opt-in via env var for local debugging.
     reload_enabled = os.getenv("NICEGUI_RELOAD", "false").lower() in {"1", "true", "yes"}
-    ui.run(create_ui, host="127.0.0.1", port=8000, reload=reload_enabled)
+    host = os.getenv("PD_OCR_TRAINER_HOST", "127.0.0.1")
+    port = int(os.getenv("PD_OCR_TRAINER_PORT", "8000"))
+    show_browser = os.getenv("PD_OCR_TRAINER_SHOW_BROWSER", "true").lower() in {"1", "true", "yes"}
+    ui.run(create_ui, host=host, port=port, reload=reload_enabled, show=show_browser)
 
 
 if __name__ in {"__main__", "__mp_main__"}:
