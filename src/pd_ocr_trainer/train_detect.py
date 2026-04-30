@@ -611,6 +611,13 @@ def main(args, progress_hook: ProgressHook | None = None):
                 log_line(f"Validation loss decreased {min_loss:.6} --> {val_loss:.6}: saving state...")
                 params = model.module if hasattr(model, "module") else model
                 torch.save(params.state_dict(), Path(args.output_dir) / f"{exp_name}.pt")
+                # Persist the detection architecture name so downstream
+                # consumers can instantiate a matching model without guessing.
+                try:
+                    arch_path = Path(args.output_dir) / f"{exp_name}.arch"
+                    arch_path.write_text(args.arch, encoding="utf-8")
+                except Exception as exc:  # pragma: no cover - best effort
+                    log_line(f"Warning: failed to write arch sidecar: {exc}")
                 min_loss = val_loss
             log_line(
                 f"Epoch {epoch + 1}/{args.epochs} - Validation loss: {val_loss:.6} "
