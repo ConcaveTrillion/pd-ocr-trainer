@@ -11,12 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from queue import Empty, Queue
 
-import torch
-from doctr.datasets import VOCABS
 from nicegui import ui
-
-from pd_ocr_trainer.train_detect import detect_from_config
-from pd_ocr_trainer.train_recog import train_from_config
 
 # Get the project root (parent of src directory)
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -48,6 +43,8 @@ def _default_worker_count() -> int:
 def _release_cuda_memory() -> None:
     """Best-effort CUDA cleanup after training ends or fails."""
     gc.collect()
+    import torch
+
     if not torch.cuda.is_available():
         return
     try:
@@ -80,6 +77,35 @@ def get_os_data_parent() -> Path:
 APP_DATA_ROOT = Path(os.getenv("PD_OCR_TRAINER_APP_DATA_ROOT", get_os_data_parent() / APP_NAME))
 SHARED_MODELS_DIR = Path(os.getenv("PD_OCR_TRAINER_SHARED_MODELS_DIR", get_os_data_parent() / MODEL_STORE_DIRNAME))
 TRAINER_SETTINGS_PATH = APP_DATA_ROOT / "trainer_settings.json"
+
+_VOCABS_CACHE_PATH = APP_DATA_ROOT / "_vocabs_cache.json"
+_vocabs_cache: "dict | None" = None
+
+
+def _get_vocabs() -> dict:
+    """Return the doctr VOCABS dict, using a JSON cache to avoid a slow import on every startup."""
+    global _vocabs_cache
+    if _vocabs_cache is not None:
+        return _vocabs_cache
+    if _VOCABS_CACHE_PATH.exists():
+        try:
+            with open(_VOCABS_CACHE_PATH, encoding="utf-8") as f:
+                _vocabs_cache = json.load(f)
+            return _vocabs_cache
+        except Exception:
+            pass
+    # Cache miss — import doctr.datasets and write cache for next startup.
+    from doctr.datasets import VOCABS as _DOCTR_VOCABS
+
+    _vocabs_cache = dict(_DOCTR_VOCABS)
+    try:
+        _VOCABS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(_VOCABS_CACHE_PATH, "w", encoding="utf-8") as f:
+            json.dump(_vocabs_cache, f, ensure_ascii=False)
+    except Exception:
+        pass
+    return _vocabs_cache
+
 
 DEFAULT_VOCAB_LIBRARY = ["multilingual", "currency"]
 DEFAULT_CUSTOM_CHARACTERS = "⸺¡¿—‘’“”′″"
@@ -282,7 +308,7 @@ def _unique_chars_in_order(chars: str) -> str:
 
 def build_custom_vocab_arg(vocab_names: list[str], custom_chars: str) -> str:
     """Build CUSTOM vocab argument from selected library vocab names and custom chars."""
-    library_chars = "".join(VOCABS[name] for name in vocab_names if name in VOCABS)
+    library_chars = "".join(_get_vocabs()[name] for name in vocab_names if name in _get_vocabs())
     combined_chars = _unique_chars_in_order(library_chars + (custom_chars or ""))
     if not combined_chars:
         raise ValueError("Vocabulary cannot be empty. Select at least one library vocab or custom character.")
@@ -755,7 +781,7 @@ class DetectionTrainingConfig:
         self.early_stop_epochs = 5
         self.early_stop_delta = 0.01
         self.model_name = _prefixed_model_name("detection", f"model-finetuned-{_default_model_timestamp()}")
-        self.device = 0 if torch.cuda.is_available() else None
+        self.device = None  # set lazily at training start via _detect_cuda_device()
 
 
 class RecognitionTrainingConfig:
@@ -777,14 +803,15 @@ class RecognitionTrainingConfig:
         self.early_stop = False
         self.early_stop_epochs = 5
         self.early_stop_delta = 0.01
-        default_vocab_library = [name for name in DEFAULT_VOCAB_LIBRARY if name in VOCABS]
+        vocabs = _get_vocabs()
+        default_vocab_library = [name for name in DEFAULT_VOCAB_LIBRARY if name in vocabs]
         if not default_vocab_library:
-            default_vocab_library = ["french"] if "french" in VOCABS else [next(iter(VOCABS))]
+            default_vocab_library = ["french"] if "french" in vocabs else [next(iter(vocabs))]
         self.vocab_library = default_vocab_library
         self.custom_characters = DEFAULT_CUSTOM_CHARACTERS
         self.vocab = build_custom_vocab_arg(self.vocab_library, self.custom_characters)
         self.workers = _default_worker_count()
-        self.device = 0 if torch.cuda.is_available() else None
+        self.device = None  # set lazily at training start via _detect_cuda_device()
 
 
 def _reset_model_names_to_defaults() -> None:
@@ -881,7 +908,7 @@ def _apply_recognition_settings(data: dict) -> None:
 
     loaded_vocab_library = data.get("vocab_library")
     if isinstance(loaded_vocab_library, list):
-        cleaned = [str(name) for name in loaded_vocab_library if isinstance(name, str) and name in VOCABS]
+        cleaned = [str(name) for name in loaded_vocab_library if isinstance(name, str) and name in _get_vocabs()]
         if cleaned:
             recognition_config.vocab_library = cleaned
 
@@ -1708,7 +1735,7 @@ def create_ui():
 
                     ui.select(
                         label="Vocab Library (shown as tags)",
-                        options=sorted(VOCABS.keys()),
+                        options=sorted(_get_vocabs().keys()),
                         value=recognition_config.vocab_library,
                         multiple=True,
                         on_change=lambda v: (
@@ -1732,7 +1759,7 @@ def create_ui():
                             setattr(
                                 recognition_config,
                                 "vocab_library",
-                                [name for name in DEFAULT_VOCAB_LIBRARY if name in VOCABS],
+                                [name for name in DEFAULT_VOCAB_LIBRARY if name in _get_vocabs()],
                             ),
                             setattr(recognition_config, "custom_characters", DEFAULT_CUSTOM_CHARACTERS),
                             refresh_vocab_ui(),
@@ -1894,6 +1921,13 @@ def create_ui():
 
                 def train_worker():
                     global training_thread, training_cancelled
+                    # Heavy imports are deferred here so startup stays fast.
+                    import torch
+
+                    from pd_ocr_trainer.train_detect import detect_from_config
+                    from pd_ocr_trainer.train_recog import train_from_config
+
+                    cuda_device = 0 if torch.cuda.is_available() else None
                     try:
                         selected_train_root = _split_profile_root("train", selected_profile)
                         selected_val_root = _split_profile_root("val", selected_profile)
@@ -1947,7 +1981,7 @@ def create_ui():
                                 early_stop_delta=detection_config.early_stop_delta,
                                 pretrained=detection_config.pretrained,
                                 output_dir=str(detection_out_dir),
-                                device=detection_config.device,
+                                device=cuda_device,
                                 name=detection_config.model_name,
                                 progress_hook=ui_progress,
                             )
@@ -1975,7 +2009,7 @@ def create_ui():
                                 early_stop_epochs=recognition_config.early_stop_epochs,
                                 early_stop_delta=recognition_config.early_stop_delta,
                                 output_dir=str(recognition_out_dir),
-                                device=recognition_config.device,
+                                device=cuda_device,
                                 pretrained=recognition_config.pretrained,
                                 name=recognition_config.model_name,
                                 progress_hook=ui_progress,
