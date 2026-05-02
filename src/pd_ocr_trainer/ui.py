@@ -10,6 +10,12 @@ from pathlib import Path
 from queue import Empty, Queue
 
 from nicegui import ui
+from pd_book_tools.ocr.doctr_support import (
+    DEFAULT_VOCAB_EXTRA_CHARS as _DEFAULT_VOCAB_EXTRA_CHARS,
+)
+from pd_book_tools.ocr.doctr_support import (
+    DEFAULT_VOCAB_LIBRARY as _DEFAULT_VOCAB_LIBRARY,
+)
 
 from .dataset_store import (
     APP_DATA_ROOT,
@@ -94,8 +100,8 @@ def _get_vocabs() -> dict:
     return _vocabs_cache
 
 
-DEFAULT_VOCAB_LIBRARY = ["multilingual", "currency"]
-DEFAULT_CUSTOM_CHARACTERS = "⸺¡¿—‘’“”′″"
+DEFAULT_VOCAB_LIBRARY = list(_DEFAULT_VOCAB_LIBRARY)
+DEFAULT_CUSTOM_CHARACTERS = _DEFAULT_VOCAB_EXTRA_CHARS
 
 DETECTION_ARCH_OPTIONS = [
     "db_resnet34",
@@ -412,7 +418,9 @@ def _apply_recognition_settings(data: dict) -> None:
 
     loaded_custom_characters = data.get("custom_characters")
     if isinstance(loaded_custom_characters, str):
-        recognition_config.custom_characters = loaded_custom_characters
+        # Merge any new default chars that weren't in the saved settings
+        merged = _unique_chars_in_order(loaded_custom_characters + DEFAULT_CUSTOM_CHARACTERS)
+        recognition_config.custom_characters = merged
 
     recognition_config.vocab = build_custom_vocab_arg(
         recognition_config.vocab_library,
