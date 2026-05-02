@@ -100,6 +100,13 @@ Change this to
 
 Once you've done this, you can run the model training notebook.
 
+## Roadmap
+
+- **Mac / Apple Silicon (MPS) support** — test and validate model training and
+  inference on Apple Silicon via PyTorch MPS backend; the doctr training scripts
+  currently target CUDA, MPS compatibility needs investigation (some ops may fall
+  back to CPU)
+
 ## License
 
 See LICENSE file.

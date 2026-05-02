@@ -88,14 +88,17 @@ def record_lr(
             scaler.scale(train_loss).backward()
             scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 5)
+            scale_before = scaler.get_scale()
             scaler.step(optimizer)
             scaler.update()
+            if scaler.get_scale() >= scale_before:
+                scheduler.step()
         else:
             train_loss = model(images, targets)["loss"]
             train_loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 5)
             optimizer.step()
-        scheduler.step()
+            scheduler.step()
 
         if not torch.isfinite(train_loss):
             if batch_idx == 0:
@@ -140,15 +143,17 @@ def fit_one_epoch(
             scaler.scale(train_loss).backward()
             scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 5)
+            scale_before = scaler.get_scale()
             scaler.step(optimizer)
             scaler.update()
+            if scaler.get_scale() >= scale_before:
+                scheduler.step()
         else:
             train_loss = model(images, targets)["loss"]
             train_loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 5)
             optimizer.step()
-
-        scheduler.step()
+            scheduler.step()
         last_lr = scheduler.get_last_lr()[0]
 
         if progress_hook is None:

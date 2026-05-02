@@ -117,15 +117,18 @@ def record_lr(
             scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 5)
             # Update the params
+            scale_before = scaler.get_scale()
             scaler.step(optimizer)
             scaler.update()
+            if scaler.get_scale() >= scale_before:
+                scheduler.step()
         else:
             train_loss = model(images, targets)["loss"]
             train_loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 5)
             optimizer.step()
-        # Update LR
-        scheduler.step()
+            # Update LR
+            scheduler.step()
 
         # Record
         if not torch.isfinite(train_loss):
@@ -175,15 +178,17 @@ def fit_one_epoch(
             scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 5)
             # Update the params
+            scale_before = scaler.get_scale()
             scaler.step(optimizer)
             scaler.update()
+            if scaler.get_scale() >= scale_before:
+                scheduler.step()
         else:
             train_loss = model(images, targets)["loss"]
             train_loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 5)
             optimizer.step()
-
-        scheduler.step()
+            scheduler.step()
         last_lr = scheduler.get_last_lr()[0]
 
         if progress_hook is None:
