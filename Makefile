@@ -1,7 +1,33 @@
 .PHONY: install setup reset remove-venv reset-full upgrade-deps test lint \
 	py-lint py-lint-fix lint-fix format pre-commit-check ci build clean \
 	clean-logs clean-cache run run-verbose export-models \
-	release-patch release-minor release-major _do-release help
+	release-patch release-minor release-major _do-release help \
+	local-setup dev-local check-local-editable run-local run-local-verbose \
+	python-local
+
+# ---------------------------------------------------------------------------
+# Peer-repo discovery for *-local targets
+# ---------------------------------------------------------------------------
+# `make *-local` workflows install / run pd-ocr-trainer against a sibling
+# pd-book-tools checkout instead of the pinned tag in pyproject.toml.
+# PEER_BOOK_TOOLS is the absolute path if the sibling exists, or empty
+# otherwise. The require-peer guard (used inside each *-local recipe) prints
+# a clear message and exits 1 when the sibling is missing — no surprise
+# failures from raw uv errors. `make local-setup` clones the sibling if
+# missing.
+PEER_BOOK_TOOLS_PATH := ../pd-book-tools
+PEER_BOOK_TOOLS_REPO := https://github.com/ConcaveTrillion/pd-book-tools.git
+PEER_BOOK_TOOLS := $(realpath $(PEER_BOOK_TOOLS_PATH))
+
+define _require_peer_book_tools
+	@if [ -z "$(PEER_BOOK_TOOLS)" ]; then \
+		echo "❌ Peer repo not found at $(PEER_BOOK_TOOLS_PATH)."; \
+		echo "   This *-local target requires pd-book-tools as a sibling checkout."; \
+		echo "   Run: make local-setup"; \
+		echo "   (or clone manually: git clone $(PEER_BOOK_TOOLS_REPO) $(PEER_BOOK_TOOLS_PATH))"; \
+		exit 1; \
+	fi
+endef
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -164,5 +190,52 @@ _do-release:
 	git commit -m "chore: release v$$VERSION"; \
 	git tag "v$$VERSION"; \
 	echo "🏷️  Tagged v$$VERSION - push with: git push && git push --tags"
+
+# ---------------------------------------------------------------------------
+# Local editable workflow (requires ../pd-book-tools sibling checkout)
+# ---------------------------------------------------------------------------
+# Each target self-checks for the peer repo and exits cleanly if absent.
+# UV_NO_SYNC=1 on *-run* targets prevents `uv run` from re-resolving the lock
+# (which would silently overwrite the editable install with the pinned tag).
+
+local-setup: ## [local-dev] Clone ../pd-book-tools if missing and set up the editable workspace
+	@if [ -d "$(PEER_BOOK_TOOLS_PATH)" ]; then \
+		echo "✅ Peer repo already at $(PEER_BOOK_TOOLS_PATH) — skipping clone."; \
+	else \
+		echo "📥 Cloning pd-book-tools from $(PEER_BOOK_TOOLS_REPO)..."; \
+		git clone "$(PEER_BOOK_TOOLS_REPO)" "$(PEER_BOOK_TOOLS_PATH)"; \
+	fi
+	@$(MAKE) --no-print-directory dev-local
+	@echo ""
+	@echo "💡 Optional: to also set up pd-book-tools' own venv (for running its tests):"
+	@echo "      (cd $(PEER_BOOK_TOOLS_PATH) && make setup)"
+
+dev-local: ## [local-dev] Install pd-book-tools from ../pd-book-tools as editable in the venv
+	$(call _require_peer_book_tools)
+	UV_LINK_MODE=copy uv sync --group all-dev
+	UV_LINK_MODE=copy uv pip install -e "$(PEER_BOOK_TOOLS)"
+	@$(MAKE) --no-print-directory check-local-editable
+	@echo "✅ Local editable pd-book-tools is active in the venv."
+
+check-local-editable: ## [local-dev] Verify pd-book-tools resolves to ../pd-book-tools (not the pinned tag)
+	$(call _require_peer_book_tools)
+	@env -u VIRTUAL_ENV UV_NO_SYNC=1 uv run python -c "import inspect, os, sys, importlib.metadata as md, pd_book_tools; \
+module_file = os.path.realpath(inspect.getfile(pd_book_tools)); \
+peer = os.path.realpath('$(PEER_BOOK_TOOLS)'); \
+is_local = module_file.startswith(peer + os.sep) or module_file == peer; \
+print('module_file=', module_file); \
+print('expected_peer=', peer); \
+print('dist_version=', md.version('pd-book-tools')); \
+sys.exit(0 if is_local else 1)" || (echo "❌ pd-book-tools is not local/editable. Run: make dev-local" >&2; exit 1)
+	@echo "✅ pd-book-tools resolves to local editable copy."
+
+run-local: check-local-editable ## [local-dev] Run the trainer UI against the local editable workspace; pass ARGS="..."
+	env -u VIRTUAL_ENV UV_NO_SYNC=1 uv run pd-ocr-trainer-ui $(ARGS)
+
+run-local-verbose: check-local-editable ## [local-dev] Run the trainer UI in verbose mode against the local editable workspace; pass ARGS="..."
+	env -u VIRTUAL_ENV UV_NO_SYNC=1 uv run pd-ocr-trainer-ui $(ARGS)
+
+python-local: check-local-editable ## [local-dev] Run python against the local editable workspace; pass ARGS="..."
+	env -u VIRTUAL_ENV UV_NO_SYNC=1 uv run python $(ARGS)
 
 .DEFAULT_GOAL := help
