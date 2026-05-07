@@ -1,0 +1,16 @@
+{
+  // Project-wide markdownlint configuration.
+  //
+  // Most defaults are kept; the rules below are too noisy for the
+  // mixed prose / table / code documentation in `docs/`.
+  "config": {
+    // Long lines are common in tables and prose paragraphs that already
+    // wrap at sentence boundaries. Don't fail on them.
+    "MD013": false,
+
+    // Tables in this repo aren't always rectangular (some rows are much
+    // longer than others). The "compact" / "aligned" enforcement adds a
+    // lot of churn for no reader benefit.
+    "MD060": false
+  }
+}
