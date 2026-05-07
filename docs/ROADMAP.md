@@ -234,6 +234,28 @@ The trainer has two distinct, **independently shippable** jobs.
   not exist in this repo yet (no `[tool.uv.sources]` torch entry, no
   `make gpu-extras` recipe). Resolve before implementing (t1) end-to-end.
 
+### (t2) Local-mode port auto-select + stable bookmarks + in-UI URL display
+
+- The NiceGUI training UI launched via `make run` currently fails
+  loud on port collision and prints the bound URL only to stdout.
+  Triggered by a real stale-port collision; trainer is a long-running
+  oversight UI, so operators routinely close the launching console.
+- Local-mode startup tries persisted-last-port, then default port,
+  then `port=0`. Explicit `--port N` disables the fallback and fails
+  loud on collision (operator intent honored).
+- Persist last successfully-bound port to a small state file so
+  bookmarks survive across restarts.
+- Surface the bound URL in the running UI itself (footer / header /
+  About / copy widget) in addition to the stdout banner.
+- Spec: [`./specs/local-mode-port-autoselect.md`](./specs/local-mode-port-autoselect.md).
+- **Workspace-wide convergence.** Sibling items in
+  `pd-prep-for-pgdp` (commit `b23b913`), `pd-ocr-labeler-spa`
+  (commit `b956275`), and `pd-ocr-labeler` (sibling item being added
+  in parallel). All four local web apps must implement the same
+  behavior surface.
+- **Ship criterion:** all six tests in the spec's acceptance section
+  pass; in-UI URL is visible after closing the launching console.
+
 ## Cross-repo dependencies
 
 - **`pd-ocr-labeler`** — declare `language` + `typeface` on DocTR
