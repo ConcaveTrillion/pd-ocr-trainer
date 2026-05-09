@@ -139,6 +139,10 @@ doctr_package/
 /ml-models/
 /ml-models/**
 
+# Training / validation image crops (binary; tracked but excluded from ripgrep search scope)
+ml-training/
+ml-validation/
+
 # Claude Code session state — agent memory canonical home is
 # /workspaces/ocr-container/.claude/agent-memory/, not per-repo. If you
 # see a .claude/ tree here, it is leakage; clean it up.
