@@ -72,7 +72,8 @@ fast (<200 ms warm) and always selects the project venv.
 
 **Common high-confidence violations** (bot auto-fix candidates)
 
-- `python -m pytest` or `python3 script.py` in any `Makefile`, `*.sh`, `.github/workflows/*.yml`, or `.pre-commit-config.yaml` hook.
+- `python -m pytest` or `python3 script.py` in any `Makefile`, `*.sh`,
+  `.github/workflows/*.yml`, or `.pre-commit-config.yaml` hook.
 - `pre-commit run` (bare) instead of `uv run pre-commit run` in CI or scripts.
 - `ruff check` or `pyright` (bare) in scripts that don't activate a venv first.
 
