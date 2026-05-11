@@ -107,9 +107,14 @@ select = [
     "W",      # pycodestyle warnings
     "F",      # pyflakes
     "I",      # isort
+    "N",      # pep8-naming
     "B",      # flake8-bugbear
+    "SIM",    # flake8-simplify
     "C4",     # flake8-comprehensions
     "UP",     # pyupgrade
+    "RUF",    # ruff-specific rules
+    "ERA",    # eradicate (commented-out code)
+    "T20",    # flake8-print
 ]
 ignore = [
     "E501",   # line too long (handled by formatter)
@@ -119,3 +124,11 @@ ignore = [
 known-first-party = ["pd_ocr_trainer"]
 
 [tool.ruff.format]
+
+[tool.pyright]
+include = ["src", "tests", "scripts"]
+typeCheckingMode = "basic"
+
+[[tool.pyright.executionEnvironments]]
+root = "src"
+typeCheckingMode = "strict"

@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import hashlib
 import logging
@@ -11,7 +12,7 @@ from typing import Any
 import numpy as np
 import torch
 import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.nn.parallel import DistributedDataParallel as DDP  # noqa: N817 — PyTorch standard alias
 from torch.optim.lr_scheduler import CosineAnnealingLR, MultiplicativeLR, OneCycleLR, PolynomialLR
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
@@ -29,7 +30,7 @@ else:
     from tqdm.auto import tqdm
 
 from doctr import datasets
-from doctr import transforms as T
+from doctr import transforms as T  # noqa: N812 — doctr library conventional alias
 from doctr.datasets import VOCABS, RecognitionDataset, WordGenerator
 from doctr.models import login_to_hub, push_to_hf_hub, recognition
 from doctr.utils.metrics import TextMatch
@@ -42,11 +43,9 @@ ProgressHook = Callable[[dict[str, Any]], None]
 def _emit_progress(progress_hook: ProgressHook | None, **payload: Any) -> None:
     if progress_hook is None:
         return
-    try:
-        progress_hook(payload)
-    except Exception:
+    with contextlib.suppress(Exception):
         # Progress reporting must never break training.
-        pass
+        progress_hook(payload)
 
 
 def resolve_vocab(vocab_arg: str) -> str:
@@ -332,7 +331,7 @@ def main(args, progress_hook: ProgressHook | None = None):
 
     pbar = None
     if progress_hook is None:
-        pbar = tqdm(disable=False if (slack_token and slack_channel) and (rank == 0) else True)
+        pbar = tqdm(disable=not ((slack_token and slack_channel) and (rank == 0)))
         if slack_token and slack_channel:
             # Monkey patch tqdm write method to send messages directly to Slack
             pbar.write = lambda msg: pbar.sio.client.chat_postMessage(channel=slack_channel, text=msg)
@@ -341,7 +340,7 @@ def main(args, progress_hook: ProgressHook | None = None):
         if pbar is not None:
             pbar.write(message)
         else:
-            print(message)
+            logging.info(message)
         _emit_progress(progress_hook, event="log", message=message)
 
     log_line(str(args))

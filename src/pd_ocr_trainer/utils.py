@@ -8,7 +8,7 @@ def plot_samples(images, targets):
     # Unnormalize image
     num_samples = min(len(images), 12)
     num_cols = min(len(images), 4)
-    num_rows = int(math.ceil(num_samples / num_cols))
+    num_rows = math.ceil(num_samples / num_cols)
     _, axes = plt.subplots(num_rows, num_cols, figsize=(20, 5))
     for idx in range(num_samples):
         img = (255 * images[idx].numpy()).round().clip(0, 255).astype(np.uint8)

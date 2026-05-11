@@ -102,6 +102,13 @@ Once you've done this, you can run the model training notebook.
 
 ## Roadmap
 
+The Hugging Face datasets integration design — milestones, repo
+naming, typeface enum, model-metadata sidecar — lives in
+[`docs/ROADMAP.md`](docs/ROADMAP.md). The dataset shape and format
+spec it builds on is [`docs/DATASETS.md`](docs/DATASETS.md).
+
+Other near-term work:
+
 - **Mac / Apple Silicon (MPS) support** — test and validate model training and
   inference on Apple Silicon via PyTorch MPS backend; the doctr training scripts
   currently target CUDA, MPS compatibility needs investigation (some ops may fall
