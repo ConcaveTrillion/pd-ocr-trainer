@@ -1,5 +1,6 @@
 """NiceGUI training interface for OCR configuration and dataset management."""
 
+import contextlib
 import gc
 import json
 import logging
@@ -62,10 +63,8 @@ def _release_cuda_memory() -> None:
 
     if not torch.cuda.is_available():
         return
-    try:
+    with contextlib.suppress(Exception):
         torch.cuda.synchronize()
-    except Exception:
-        pass
     torch.cuda.empty_cache()
     if hasattr(torch.cuda, "ipc_collect"):
         torch.cuda.ipc_collect()
@@ -623,7 +622,7 @@ def create_ui():
                         def _toggle_auto_det_batch(v) -> None:
                             if v.value:
                                 suggested = suggest_batch_size("detection")
-                                print(f"[Auto batch] Detection: suggested batch_size={suggested}")
+                                logger.debug("[Auto batch] Detection: suggested batch_size=%d", suggested)
                                 detection_config.batch_size = suggested
                                 det_batch_input.set_value(suggested)
                                 det_batch_input.disable()
@@ -826,7 +825,7 @@ def create_ui():
                         def _toggle_auto_rec_batch(v) -> None:
                             if v.value:
                                 suggested = suggest_batch_size("recognition")
-                                print(f"[Auto batch] Recognition: suggested batch_size={suggested}")
+                                logger.debug("[Auto batch] Recognition: suggested batch_size=%d", suggested)
                                 recognition_config.batch_size = suggested
                                 rec_batch_input.set_value(suggested)
                                 rec_batch_input.disable()
