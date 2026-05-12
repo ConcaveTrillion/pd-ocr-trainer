@@ -63,3 +63,9 @@ Architecture: `docs/ROADMAP.md` (approved plan) + `docs/DATASETS.md` (dataset sp
 - `../pd-ocr-labeler/` — labels ground truth; trainer consumes labeled exports; labeler must declare `language` + `typeface` on exports (cross-repo work)
 - `../pd-ocr-synth/` — synthetic training data (upstream); stamps `language` + `typeface` from recipes
 - `../pd-ocr-cli/` — consumes exported model artifacts; model-rename in milestone d is a breaking change there
+
+## Spec lifecycle
+
+Design spec files (`docs/specs/<date>-<topic>-design.md`) live in `docs/specs/` while the
+milestone's chore issues are open. When the last chore closes and the implementation ships,
+move the file to `docs/architecture/` and commit. See workspace `docs/conventions.md`.
