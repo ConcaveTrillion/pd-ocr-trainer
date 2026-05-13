@@ -1,7 +1,8 @@
 # CLAUDE — pd-ocr-trainer
 
-DocTR OCR model training pipeline (detection, recognition, typeface classification) for PGDP data, driven by a NiceGUI training UI.
-HF dataset publishing, model export, and metadata sidecars live here — not in the labeler.
+DocTR OCR model training pipeline (detection, recognition, typeface
+classification) for PGDP data, driven by a NiceGUI training UI. HF dataset
+publishing, model export, and metadata sidecars live here — not in the labeler.
 Architecture: `docs/ROADMAP.md` (approved plan) + `docs/DATASETS.md` (dataset spec).
 
 ## Commands
@@ -9,27 +10,26 @@ Architecture: `docs/ROADMAP.md` (approved plan) + `docs/DATASETS.md` (dataset sp
 | target | does |
 |---|---|
 | `make install` | install deps + pre-commit hooks (`uv sync --group all-dev`) |
-| `make test` | run tests parallelised (`uv run pytest -n auto -v -ra`) |
+| `make test` | `uv run pytest -n auto -v -ra` |
 | `make test-single TEST='...'` | run one pytest node id |
 | `make test-k K='pattern'` | run tests by `-k` expression |
-| `make lint` | ruff-check via pre-commit |
-| `make lint-fix` | ruff-format + ruff-check |
+| `make lint` / `make lint-fix` | ruff via pre-commit (with auto-fix) |
 | `make format` | format then lint |
 | `make pre-commit-check` | run all pre-commit hooks |
 | `make ci` | install + pre-commit + test + build |
-| `make build` | build wheel + sdist into `dist/` |
+| `make build` | wheel + sdist into `dist/` |
 | `make run` | start NiceGUI training UI (`uv run pd-ocr-trainer-ui`) |
 | `make export-models` | copy trained artifacts to workspace exports dir |
-| `make clean` / `make reset` | remove caches or rebuild venv |
+| `make clean` / `make reset` | remove caches / rebuild venv |
 | `make release-patch/minor/major` | bump version, commit, tag |
-| `make local-setup` | clone `../pd-book-tools` + install as editable |
+| `make local-setup` | clone `../pd-book-tools` + install editable |
 | `make dev-local` | install `../pd-book-tools` editable in venv |
 | `make run-local` | run UI against local editable workspace |
 
 ## Rules
 
 - Make targets first; fall back to `uv run …` only when no target exists.
-- Never `python -m pytest`. Always `make test` or `uv run pytest -n auto`.
+- Never `python -m pytest`. Always `uv run pytest -n auto` or `make test`. Bare `python`/`python3`/`.venv/bin/python` miss the venv.
 - HF dataset naming: `<owner>/pd-ocr-<source>-<lang>-<typeface>[-<qualifier>]`.
   - `source`: `real` | `synth` | `eval` | `mix`
   - `lang`: BCP-47 lowercase (`en`, `ga`, `de`, `el`, `grc`, `la`, …)
@@ -46,20 +46,20 @@ Architecture: `docs/ROADMAP.md` (approved plan) + `docs/DATASETS.md` (dataset sp
 
 ## Key docs
 
-- `docs/ROADMAP.md` — HF datasets integration plan (approved, not yet implemented); milestones a/a.5/b/c/d, glyph milestones g1/g2, tooling milestones t1/t2
-- `docs/DATASETS.md` — dataset shape + card-data spec (parquet/imagefolder, auth, caching)
-- `docs/specs/` — per-milestone detail specs (glyph-annotation-eval-slicing, glyph-feature-classifier, dev-local-upgrade-flow, local-mode-port-autoselect)
+- `docs/ROADMAP.md` — HF datasets integration plan (approved, not yet implemented); milestones a/a.5/b/c/d, glyph milestones g1/g2, tooling t1/t2.
+- `docs/DATASETS.md` — dataset shape + card-data spec (parquet/imagefolder, auth, caching).
+- `docs/specs/` — per-milestone detail specs (glyph-annotation-eval-slicing, glyph-feature-classifier, dev-local-upgrade-flow, local-mode-port-autoselect).
 
 ## Layout
 
-- `src/pd_ocr_trainer/` — installable package; `dataset_store.py` (DatasetSource), `train_detect.py`, `train_recog.py`, `dataset_ui.py`, `ui.py`
-- `ml-training/<profile>/{detection,recognition}/` — local training data by profile/group
-- `ml-validation/<profile>/{detection,recognition}/` — local validation data by profile/group
-- `matched-ocr/` — richer page documents; preferred backfill source over `labels.json`
+- `src/pd_ocr_trainer/` — installable package; `dataset_store.py` (`DatasetSource`), `train_detect.py`, `train_recog.py`, `dataset_ui.py`, `ui.py`.
+- `ml-training/<profile>/{detection,recognition}/` — local training data by profile/group.
+- `ml-validation/<profile>/{detection,recognition}/` — local validation data by profile/group.
+- `matched-ocr/` — richer page documents; preferred backfill source over `labels.json`.
 
 ## Sibling repos
 
-- `../pd-book-tools/` — shared OCR/image primitives; pinned in `pyproject.toml`; editable via `make dev-local`
-- `../pd-ocr-labeler/` — labels ground truth; trainer consumes labeled exports; labeler must declare `language` + `typeface` on exports (cross-repo work)
-- `../pd-ocr-synth/` — synthetic training data (upstream); stamps `language` + `typeface` from recipes
-- `../pd-ocr-cli/` — consumes exported model artifacts; model-rename in milestone d is a breaking change there
+- `../pd-book-tools/` — upstream; pinned in `pyproject.toml`; editable via `make dev-local`.
+- `../pd-ocr-labeler/` — labels ground truth; trainer consumes labeled exports; labeler must declare `language` + `typeface` on exports (cross-repo work).
+- `../pd-ocr-synth/` — synthetic training data (upstream); stamps `language` + `typeface` from recipes.
+- `../pd-ocr-cli/` — consumes exported model artifacts; model-rename in milestone d is a breaking change there.
