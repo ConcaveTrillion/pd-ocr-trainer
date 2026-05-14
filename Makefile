@@ -1,3 +1,17 @@
+AI ?=
+LOG := .ci-ai.log
+
+ifdef AI
+_goals := $(or $(MAKECMDGOALS),ci)
+.PHONY: $(_goals)
+$(_goals):
+	@rm -f $(LOG)
+	@$(MAKE) --no-print-directory AI= $@ > $(LOG) 2>&1 \
+		&& echo "✅ $@ passed (log: $(LOG))" \
+		|| (echo "❌ $@ failed:"; uv run scripts/ai-filter-log.py $(LOG); echo "(full log: $(LOG))"; exit 1)
+
+else
+
 .PHONY: install setup reset remove-venv reset-full upgrade-deps test lint \
 	py-lint py-lint-fix lint-fix format pre-commit-check ci build clean \
 	clean-logs clean-cache run run-verbose export-models \
@@ -241,3 +255,5 @@ python-local: check-local-editable ## [local-dev] Run python against the local e
 	env -u VIRTUAL_ENV UV_NO_SYNC=1 uv run python $(ARGS)
 
 .DEFAULT_GOAL := help
+
+endif
