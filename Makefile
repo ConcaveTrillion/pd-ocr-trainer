@@ -33,14 +33,16 @@ help: ## Show this help message
 	@echo "Available commands:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-install: ## Install dependencies and set up development environment
+setup: ## Set up development environment (uv sync + pre-commit hooks)
 	@echo "📦 Installing dependencies..."
 	uv sync --group all-dev
 	@echo "🪝 Setting up pre-commit hooks..."
 	@[ -f .git/hooks/pre-commit ] || uv run pre-commit install
-	@echo "✅ Installation complete!"
+	@echo "✅ Setup complete!"
 
-setup: install ## Alias for install
+install: ## Install pd-ocr-trainer-ui as a uv tool from local source
+	uv tool install --reinstall .
+	@echo "pd-ocr-trainer-ui installed. Run: pd-ocr-trainer-ui"
 
 remove-venv: ## Remove the virtual environment
 	@echo "🗑️  Removing existing virtual environment..."
@@ -122,9 +124,9 @@ pre-commit-check: ## Run pre-commit on all files
 	@echo "🪝 Running pre-commit on all files..."
 	uv run pre-commit run --all-files
 
-ci: ## Run complete CI pipeline (install, pre-commit, test, build)
+ci: ## Run complete CI pipeline (setup, pre-commit, test, build)
 	@echo "🚀 Running complete CI pipeline..."
-	@$(MAKE) --no-print-directory install
+	@$(MAKE) --no-print-directory setup
 	@$(MAKE) --no-print-directory pre-commit-check
 	@$(MAKE) --no-print-directory test
 	@$(MAKE) --no-print-directory build

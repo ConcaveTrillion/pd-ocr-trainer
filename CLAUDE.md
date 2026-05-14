@@ -9,7 +9,8 @@ Architecture: `docs/ROADMAP.md` (approved plan) + `docs/DATASETS.md` (dataset sp
 
 | target | does |
 |---|---|
-| `make install` | install deps + pre-commit hooks (`uv sync --group all-dev`) |
+| `make setup` | install deps + pre-commit hooks (`uv sync --group all-dev`) |
+| `make install` | install `pd-ocr-trainer-ui` as a uv tool (puts CLIs on PATH) |
 | `make test` | `uv run pytest -n auto -v -ra` |
 | `make test-single TEST='...'` | run one pytest node id |
 | `make test-k K='pattern'` | run tests by `-k` expression |
