@@ -9,31 +9,31 @@ Architecture: `docs/ROADMAP.md` (approved plan) + `docs/DATASETS.md` (dataset sp
 
 | target | does |
 |---|---|
-| `make setup` | install deps + pre-commit hooks (`uv sync --group all-dev`) |
+| `make setup AI=1` | install deps + pre-commit hooks (`uv sync --group all-dev`) |
 | `make install` | install `pd-ocr-trainer-ui` as a uv tool (puts CLIs on PATH) |
-| `make test` | `uv run pytest -n auto -v -ra` |
-| `make test-single TEST='...'` | run one pytest node id |
-| `make test-k K='pattern'` | run tests by `-k` expression |
-| `make lint` / `make lint-fix` | ruff via pre-commit (with auto-fix) |
-| `make format` | format then lint |
-| `make pre-commit-check` | run all pre-commit hooks |
-| `make ci` | install + pre-commit + test + build |
-| `make build` | wheel + sdist into `dist/` |
+| `make test AI=1` | `uv run pytest -n auto -v -ra` |
+| `make test-single TEST='...' AI=1` | run one pytest node id |
+| `make test-k K='pattern' AI=1` | run tests by `-k` expression |
+| `make lint AI=1` / `make lint-fix AI=1` | ruff via pre-commit (with auto-fix) |
+| `make format AI=1` | format then lint |
+| `make pre-commit-check AI=1` | run all pre-commit hooks |
+| `make ci AI=1` | install + pre-commit + test + build |
+| `make build AI=1` | wheel + sdist into `dist/` |
 | `make run` | start NiceGUI training UI (`uv run pd-ocr-trainer-ui`) |
-| `make export-models` | copy trained artifacts to workspace exports dir |
+| `make export-models AI=1` | copy trained artifacts to workspace exports dir |
 | `make clean` / `make reset` | remove caches / rebuild venv |
 | `make release-patch/minor/major` | bump version, commit, tag |
 | `make local-setup` | clone `../pd-book-tools` + install editable |
 | `make dev-local` | install `../pd-book-tools` editable in venv |
 | `make run-local` | run UI against local editable workspace |
 
-Always pass `AI=1` to make targets: `make ci AI=1`, `make test AI=1`, etc.
-This captures verbose output to `.ci-ai.log` and prints only `✅ <target>
-passed` on success or filtered failure sections on error. Remove `AI=1` only
-if you need full verbose output for debugging.
+`AI=1` captures verbose output to `.ci-ai.log`; stdout shows `✅` on pass or
+filtered failure sections on error. Remove `AI=1` only if you need full verbose
+output for debugging.
 
 ## Rules
 
+- Always run `make ci AI=1` before committing.
 - Make targets first; fall back to `uv run …` only when no target exists.
 - Never `python -m pytest`. Always `uv run pytest -n auto` or `make test`. Bare `python`/`python3`/`.venv/bin/python` miss the venv.
 - HF dataset naming: `<owner>/pd-ocr-<source>-<lang>-<typeface>[-<qualifier>]`.
