@@ -69,3 +69,17 @@ output for debugging.
 - `../pd-ocr-labeler/` — labels ground truth; trainer consumes labeled exports; labeler must declare `language` + `typeface` on exports (cross-repo work).
 - `../pd-ocr-synth/` — synthetic training data (upstream); stamps `language` + `typeface` from recipes.
 - `../pd-ocr-cli/` — consumes exported model artifacts; model-rename in milestone d is a breaking change there.
+
+## GH issues
+
+Cross-cut work tasks are tracked as GH issues in
+**`ConcaveTrillion/ocr-container-meta`** (not in this repo's own tracker).
+Plans under `docs/superpowers/plans/` in the workspace root are synced there
+via `/decompose-spec --sync`. Milestone naming: `spec: <plan-basename> (#N)`.
+
+When shipping a plan task:
+
+- Before starting: `gh issue view <N> --repo ConcaveTrillion/ocr-container-meta`
+- After completing: `gh issue close <N> --repo ConcaveTrillion/ocr-container-meta`
+- List open tasks:
+  `gh issue list --repo ConcaveTrillion/ocr-container-meta --milestone "spec: <name> (#N)" --state open`
