@@ -3,7 +3,7 @@
 DocTR OCR model training pipeline (detection, recognition, typeface
 classification) for PGDP data, driven by a NiceGUI training UI. HF dataset
 publishing, model export, and metadata sidecars live here — not in the labeler.
-Architecture: `docs/ROADMAP.md` (approved plan) + `docs/DATASETS.md` (dataset spec).
+Architecture: `docs/plans/roadmap.md` (approved plan) + `docs/architecture/datasets.md` (dataset spec).
 
 ## Commands
 
@@ -52,8 +52,8 @@ output for debugging.
 
 ## Key docs
 
-- `docs/ROADMAP.md` — HF datasets integration plan (approved, not yet implemented); milestones a/a.5/b/c/d, glyph milestones g1/g2, tooling t1/t2.
-- `docs/DATASETS.md` — dataset shape + card-data spec (parquet/imagefolder, auth, caching).
+- `docs/plans/roadmap.md` — HF datasets integration plan (approved, not yet implemented); milestones a/a.5/b/c/d, glyph milestones g1/g2, tooling t1/t2.
+- `docs/architecture/datasets.md` — dataset shape + card-data spec (parquet/imagefolder, auth, caching).
 - `docs/specs/` — per-milestone detail specs (glyph-annotation-eval-slicing, glyph-feature-classifier, dev-local-upgrade-flow, local-mode-port-autoselect).
 
 ## Layout
@@ -83,3 +83,16 @@ When shipping a plan task:
 - After completing: `gh issue close <N> --repo ConcaveTrillion/ocr-container-meta`
 - List open tasks:
   `gh issue list --repo ConcaveTrillion/ocr-container-meta --milestone "spec: <name> (#N)" --state open`
+
+## docs/ folder
+
+This repo follows the workspace docs/ template — see [`docs/README.md`](docs/README.md). Active
+folders: `architecture/`, `decisions/`, `plans/`, `process/`, `research/`,
+`runbooks/`, `specs/`, `templates/`, `usage/`, plus parallel `archive/`
+subfolders.
+
+**Superpowers redirect.** When a superpowers skill (e.g. `brainstorming`,
+`writing-plans`) instructs you to save to `docs/superpowers/specs/<file>.md`
+or `docs/superpowers/plans/<file>.md`, save to `docs/specs/<file>.md` or
+`docs/plans/<file>.md` instead. There is no `docs/superpowers/` subdirectory
+in this repo.
