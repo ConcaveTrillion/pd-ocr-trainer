@@ -74,7 +74,7 @@ output for debugging.
 
 Cross-cut work tasks are tracked as GH issues in
 **`ConcaveTrillion/ocr-container-meta`** (not in this repo's own tracker).
-Plans under `docs/superpowers/plans/` in the workspace root are synced there
+Plans under `docs/plans/` in the workspace root are synced there
 via `/decompose-spec --sync`. Milestone naming: `spec: <plan-basename> (#N)`.
 
 When shipping a plan task:
