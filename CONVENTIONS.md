@@ -109,4 +109,42 @@ unclear which specs are still authoritative for ongoing work.
 - A milestone with one chore still open but all substantive work done — CT decides
   whether to move the spec early or wait for the final chore to close.
 
+## Rule: Document every lint-rule suppression
+
+**The rule.** Prefer fixing the underlying issue; suppress a lint rule only
+when the deviation is genuinely correct (e.g. an optional dependency import
+guarded by `try`/`except`). When a suppression *is* warranted —
+`# pyright: ignore[...]`, `# type: ignore[...]`, `# noqa: ...`, or a
+`[tool.ruff.lint]` `ignore` / `per-file-ignores` entry — it must (1) carry a
+short inline rationale at the point of deviation explaining *why* the
+suppression is safe, and (2) be catalogued in the repo's
+`docs/conventions/lint-deviations.md`, which records the rule, the tool, the
+file locations, and the justification. Use basedpyright's native
+`# pyright: ignore[reportRuleName]` form — mypy-style `# type: ignore[code]`
+codes are not honored by basedpyright.
+
+**Why.** A bare suppression hides whether the deviation was a deliberate,
+reviewed decision or a shortcut, and rots silently when the surrounding code
+changes. The inline comment makes intent visible where the code is read; the
+central doc makes the whole suppression set auditable in one place so it can't
+quietly grow. This rule is the escape valve for the
+"Unicode escape sequences" rule above — when a `# noqa` genuinely must stay,
+this is how it gets justified.
+
+**Common high-confidence violations** (bot auto-fix candidates)
+
+- A `# pyright: ignore`, `# type: ignore`, or `# noqa` with no adjacent comment
+  stating why the suppression is safe.
+- mypy-style `# type: ignore[import-not-found]` used to suppress a basedpyright
+  diagnostic — replace with `# pyright: ignore[reportMissingImports]`.
+- A bare unscoped `# type: ignore` / `# noqa` with no bracketed rule code.
+
+**Common judgment-call violations** (bot flags, CT decides)
+
+- A suppression whose inline rationale exists but is missing from
+  `docs/conventions/lint-deviations.md` — CT decides whether to catalogue it or
+  remove the suppression.
+- A long-standing suppression whose stated rationale no longer holds after a
+  refactor — CT decides whether to drop the suppression.
+
 <!-- workspace-conventions:end -->
