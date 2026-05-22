@@ -148,6 +148,9 @@ ml-validation/
 # see a .claude/ tree here, it is leakage; clean it up.
 .claude/
 
+# Local git worktrees created for repo-scoped agent work.
+.worktrees/
+
 
 # AI=1 make output capture log
 .ci-ai.log
