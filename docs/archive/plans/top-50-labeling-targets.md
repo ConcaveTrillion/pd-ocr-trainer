@@ -1,5 +1,9 @@
 # Top 50 Pages to Label/Train Next
 
+**Status:** ARCHIVED 2026-05-23 — operational labeling shortlist predating the
+pd-ocr-trainer retirement plan; superseded by the HF datasets roadmap
+(docs/plans/roadmap.md). Referenced layout-training spec also archived.
+
 A prioritized labeling shortlist drawn from `source-pgdp-data/output/`,
 chosen to maximise OCR/layout-model improvement per page given what's
 already in `pd-ocr-trainer/matched-ocr/` (53 pages so far).

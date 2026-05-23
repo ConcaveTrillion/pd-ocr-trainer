@@ -1,6 +1,8 @@
 # SPEC — Layout Training (End-to-End)
 
-**Status:** Draft, not yet scheduled
+**Status:** ARCHIVED 2026-05-23 — draft spec, never implemented; superseded
+by the pd-ocr-trainer retirement plan (training code moves to pd-ocr-training).
+Original status: Draft, not yet scheduled.
 **Related:** [TOP-50-LABELING-TARGETS](TOP-50-LABELING-TARGETS.md)
 (which pages to label first),
 [LABELING_STRATEGY](LABELING_STRATEGY.md) (per-day cadence),
