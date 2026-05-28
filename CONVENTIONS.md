@@ -2,6 +2,14 @@
 
 <!-- workspace-conventions:start -->
 
+## Rule: Write docs clearly
+
+**The rule.** Follow [Writing Style](docs/process/writing-style.md) for docs,
+reports, issue text, PR text, and user-facing copy.
+
+**Why.** Detailed style guidance belongs in a process doc. CONVENTIONS.md
+should stay short.
+
 ## Rule: No comments explaining what code does
 
 **The rule.** Don't add comments that restate what the code does;
