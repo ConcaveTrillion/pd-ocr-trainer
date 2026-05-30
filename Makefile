@@ -13,7 +13,7 @@ $(_goals):
 else
 
 .PHONY: install setup reset remove-venv reset-full upgrade-deps test lint \
-	py-lint py-lint-fix lint-fix format pre-commit-check ci build clean \
+	py-lint py-lint-fix lint-fix format pre-commit-check ci ci-slow build clean \
 	clean-logs clean-cache run run-verbose export-models \
 	release-patch release-minor release-major _do-release help \
 	local-setup dev-local check-local-editable run-local run-local-verbose \
@@ -146,6 +146,8 @@ ci: ## Run complete CI pipeline (setup, pre-commit, test, build)
 	@$(MAKE) --no-print-directory build
 	@echo "✅ CI pipeline complete!"
 
+ci-slow: ci ## Full pre-flight for releases (alias of ci today; reserved for slower checks if added later)
+
 build: ## Build distribution packages (wheel and sdist)
 	@echo "📦 Building distribution packages..."
 	uv build
@@ -188,24 +190,17 @@ clean-cache: ## Remove cache and temporary files
 	rm -rf .cache/ 2>/dev/null || true
 	@echo "✅ Cache cleared!"
 
-release-patch: ## Bump patch version and create a git tag (e.g. 0.1.0 -> 0.1.1)
-	uv version --bump patch
-	@$(MAKE) --no-print-directory _do-release
+release-patch: ## Release: bump patch, run ci-slow, tag, push (e.g. v0.1.0 -> v0.1.1)
+	@$(MAKE) --no-print-directory _do-release BUMP=patch
 
-release-minor: ## Bump minor version and create a git tag (e.g. 0.1.0 -> 0.2.0)
-	uv version --bump minor
-	@$(MAKE) --no-print-directory _do-release
+release-minor: ## Release: bump minor, run ci-slow, tag, push (e.g. v0.1.0 -> v0.2.0)
+	@$(MAKE) --no-print-directory _do-release BUMP=minor
 
-release-major: ## Bump major version and create a git tag (e.g. 0.1.0 -> 1.0.0)
-	uv version --bump major
-	@$(MAKE) --no-print-directory _do-release
+release-major: ## Release: bump major, run ci-slow, tag, push (e.g. v0.1.0 -> v1.0.0)
+	@$(MAKE) --no-print-directory _do-release BUMP=major
 
 _do-release:
-	@VERSION=$$(uv version --short); \
-	git add pyproject.toml uv.lock; \
-	git commit -m "chore: release v$$VERSION"; \
-	git tag "v$$VERSION"; \
-	echo "🏷️  Tagged v$$VERSION - push with: git push && git push --tags"
+	@BUMP=$(or $(BUMP),minor) ./scripts/do-release.sh
 
 # ---------------------------------------------------------------------------
 # Local editable workflow (requires ../pd-book-tools sibling checkout)
