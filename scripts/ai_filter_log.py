@@ -62,7 +62,7 @@ def fallback_tail(text: str) -> list[str]:
 
 def main() -> None:
     if len(sys.argv) != 2:
-        print("usage: ai-filter-log.py <logfile>", file=sys.stderr)
+        print("usage: ai_filter_log.py <logfile>", file=sys.stderr)
         sys.exit(1)
     path = Path(sys.argv[1])
     if not path.exists():
