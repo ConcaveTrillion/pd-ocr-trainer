@@ -31,6 +31,8 @@ class DatasetManager:
     def __init__(self):
         self.loaded_files = {}  # {filename: json_data}
         self.assignments = {}  # {filename: {page_index: 'train'|'val'|None}}
+        self.existing_assignments = {}  # {page_key: 'train'|'val'|None}
+        self.existing_page_split = {}  # {page_key: 'train'|'val'}
         self.existing_page_keys = set()
         self.page_diff_flags = {}  # {(filename, page_index): bool}
         self.existing_detection_by_page = {}
@@ -61,10 +63,11 @@ class DatasetManager:
         indexed_keys = set()
         detection_by_page = {}
         recognition_by_page = defaultdict(list)
-        dataset_roots = [ML_TRAINING_DIR, ML_VALIDATION_DIR]
+        split_by_page = {}
+        dataset_roots = [("train", ML_TRAINING_DIR), ("val", ML_VALIDATION_DIR)]
         tasks = ["detection", "recognition"]
 
-        for dataset_root in dataset_roots:
+        for split_name, dataset_root in dataset_roots:
             for task in tasks:
                 images_dir = dataset_root / task / "images"
                 if not images_dir.exists():
@@ -73,6 +76,8 @@ class DatasetManager:
                 for image_path in images_dir.glob("*.*"):
                     page_key = self.page_key_from_image_stem(image_path.stem)
                     indexed_keys.add(page_key)
+                    if page_key not in split_by_page:
+                        split_by_page[page_key] = split_name
 
                 labels_path = dataset_root / task / "labels.json"
                 if not labels_path.exists():
@@ -88,15 +93,21 @@ class DatasetManager:
                     for image_name, meta in labels_data.items():
                         page_key = Path(image_name).stem
                         indexed_keys.add(page_key)
+                        if page_key not in split_by_page:
+                            split_by_page[page_key] = split_name
                         if page_key not in detection_by_page:
                             detection_by_page[page_key] = meta
                 else:
                     for crop_name, text in labels_data.items():
                         page_key = self.page_key_from_image_stem(Path(crop_name).stem)
                         indexed_keys.add(page_key)
+                        if page_key not in split_by_page:
+                            split_by_page[page_key] = split_name
                         recognition_by_page[page_key].append(str(text))
 
         self.existing_page_keys = indexed_keys
+        self.existing_page_split = split_by_page
+        self.existing_assignments = {page_key: split_by_page.get(page_key) for page_key in indexed_keys}
         self.existing_detection_by_page = detection_by_page
         self.existing_recognition_by_page = recognition_by_page
 
@@ -221,20 +232,28 @@ class DatasetManager:
             raise ValueError(f"Failed to load {filepath.name}: {e}") from e
 
     def get_assignable_page_indices(self, filename: str, pages: list[dict]) -> list[int]:
-        """Return page indices that are new or overlap with meaningful differences."""
+        """Return all page indices; existing overlaps are still shown for reassignment."""
         assignable = []
         for idx, page in enumerate(pages):
+            assignable.append(idx)
             if not self.is_existing_page(filename, idx):
-                assignable.append(idx)
                 self.page_diff_flags[(filename, idx)] = False
                 continue
 
             is_different = self.is_page_different(filename, idx, page)
             self.page_diff_flags[(filename, idx)] = is_different
-            if is_different:
-                assignable.append(idx)
 
         return assignable
+
+    def load_all_matched_files(self):
+        """Auto-load all matched-ocr JSON files so assignment can start without manual add."""
+        if not MATCHED_OCR_DIR.exists():
+            return
+
+        for filepath in sorted(MATCHED_OCR_DIR.glob("*.json")):
+            if filepath.name in self.loaded_files:
+                continue
+            self.load_json_file(filepath)
 
     def is_flagged_different(self, filename: str, page_index: int) -> bool:
         """Whether the page is an overlap that differs from existing datasets."""
@@ -356,23 +375,7 @@ class DatasetManager:
         return merged
 
     def get_combined_split_task_pages(self) -> dict:
-        assigned = self.get_split_task_pages()
-        existing = {
-            "train": self._existing_pages_for_split("train"),
-            "val": self._existing_pages_for_split("val"),
-        }
-
-        combined = {
-            "unassigned": assigned["unassigned"],
-            "train": {"detection": {}, "recognition": {}},
-            "val": {"detection": {}, "recognition": {}},
-        }
-
-        for split in ("train", "val"):
-            for task in ("detection", "recognition"):
-                combined[split][task] = self._merge_projects(existing[split][task], assigned[split][task])
-
-        return combined
+        return self.get_split_task_pages()
 
     def save_assignments(self) -> dict:
         """Persist assignments into combined labels and prune saved pages from matched-ocr."""
@@ -392,9 +395,6 @@ class DatasetManager:
                 pending.append((filename, page_index, split))
                 by_file[filename].append(page_index)
 
-        if not pending:
-            return {"saved_pages": 0, "removed_files": 0}
-
         split_data = {
             "train": {
                 "root": ML_TRAINING_DIR,
@@ -411,6 +411,56 @@ class DatasetManager:
         for split_cfg in split_data.values():
             (split_cfg["root"] / "detection" / "images").mkdir(parents=True, exist_ok=True)
             (split_cfg["root"] / "recognition" / "images").mkdir(parents=True, exist_ok=True)
+
+        existing_pending = []
+        for page_key, target_split in self.existing_assignments.items():
+            if target_split not in {"train", "val", None}:
+                continue
+            source_split = self.existing_page_split.get(page_key)
+            if target_split != source_split:
+                existing_pending.append((page_key, source_split, target_split))
+
+        if not pending and not existing_pending:
+            return {"saved_pages": 0, "removed_files": 0}
+
+        for page_key, source_split, target_split in existing_pending:
+            det_name = f"{page_key}.png"
+            source_cfg = split_data.get(source_split) if source_split in {"train", "val"} else None
+            target_cfg = split_data.get(target_split) if target_split in {"train", "val"} else None
+
+            moved_detection = None
+            moved_recognition = {}
+
+            if source_cfg:
+                moved_detection = source_cfg["detection_labels"].pop(det_name, None)
+                src_det_path = source_cfg["root"] / "detection" / "images" / det_name
+                src_crop_dir = source_cfg["root"] / "recognition" / "images"
+
+                for key in list(source_cfg["recognition_labels"].keys()):
+                    if key.startswith(f"{page_key}_"):
+                        moved_recognition[key] = source_cfg["recognition_labels"].pop(key)
+
+                if target_cfg and src_det_path.exists():
+                    shutil.copy2(src_det_path, target_cfg["root"] / "detection" / "images" / det_name)
+                src_det_path.unlink(missing_ok=True)
+
+                for crop_name in moved_recognition:
+                    src_crop = src_crop_dir / crop_name
+                    if target_cfg and src_crop.exists():
+                        shutil.copy2(src_crop, target_cfg["root"] / "recognition" / "images" / crop_name)
+                    src_crop.unlink(missing_ok=True)
+            else:
+                for cfg in split_data.values():
+                    cfg["detection_labels"].pop(det_name, None)
+                    self._remove_page_prefixed_entries(cfg["recognition_labels"], page_key)
+                    (cfg["root"] / "detection" / "images" / det_name).unlink(missing_ok=True)
+                    self._remove_page_prefixed_images(cfg["root"] / "recognition" / "images", page_key)
+
+            if target_cfg:
+                if moved_detection is not None:
+                    target_cfg["detection_labels"][det_name] = moved_detection
+                for crop_name, text in moved_recognition.items():
+                    target_cfg["recognition_labels"][crop_name] = text
 
         for filename, page_index, split in pending:
             data = self.loaded_files[filename]
@@ -498,7 +548,7 @@ class DatasetManager:
         self.page_diff_flags.clear()
         self.refresh_existing_page_keys()
 
-        return {"saved_pages": len(pending), "removed_files": removed_files}
+        return {"saved_pages": len(pending) + len(existing_pending), "removed_files": removed_files}
 
     def get_assignable_page_count_for_file(self, filename: str) -> int:
         """Get assignable page count for a matched-ocr file without loading it in UI state."""
@@ -538,13 +588,18 @@ class DatasetManager:
 
     def update_stats(self):
         """Update total and assigned page counts."""
-        self.total_pages = sum(len(file_assigns) for file_assigns in self.assignments.values())
-        self.assigned_pages = sum(
+        matched_total = sum(len(file_assigns) for file_assigns in self.assignments.values())
+        matched_assigned = sum(
             1
             for file_assigns in self.assignments.values()
             for assignment in file_assigns.values()
             if assignment is not None
         )
+        existing_total = len(self.existing_assignments)
+        existing_assigned = sum(1 for split in self.existing_assignments.values() if split in {"train", "val"})
+
+        self.total_pages = matched_total + existing_total
+        self.assigned_pages = matched_assigned + existing_assigned
 
     @staticmethod
     def project_from_filename(filename: str) -> str:
@@ -555,7 +610,7 @@ class DatasetManager:
         return stem.rsplit("_", 1)[0]
 
     def get_split_task_pages(self) -> dict:
-        """Group pages by split and project, mirrored for detection/recognition."""
+        """Group matched and existing pages by split and project, mirrored for both tasks."""
         split_projects = {
             "unassigned": defaultdict(list),
             "train": defaultdict(list),
@@ -572,6 +627,19 @@ class DatasetManager:
                 diff_suffix = " [different]" if self.is_flagged_different(filename, page_index) else ""
                 page_label = f"{Path(filename).stem} · page {page_index + 1}{diff_suffix}"
                 split_projects[split_key][project_key].append(page_label)
+
+        matched_page_keys = {
+            self.page_instance_key(filename, page_index)
+            for filename, file_assignments in self.assignments.items()
+            for page_index in file_assignments
+        }
+
+        for page_key, assignment in self.existing_assignments.items():
+            if page_key in matched_page_keys:
+                continue
+            split_key = assignment if assignment in {"train", "val"} else "unassigned"
+            project_key = self.project_from_page_key(page_key)
+            split_projects[split_key][project_key].append(f"{page_key} [existing]")
 
         split_views = {}
         for split_key, projects in split_projects.items():
@@ -619,6 +687,20 @@ class TrainingConfig:
     """Manages training configuration."""
 
     def __init__(self):
+        # Detection
+        self.det_arch = "db_resnet50"
+        self.det_epochs = 10
+        self.det_batch_size = 16
+        self.det_learning_rate = 0.001
+        self.det_weight_decay = 0.0
+        self.det_optimizer = "adam"
+        self.det_scheduler = "cosine"
+        self.det_workers = 4
+        self.det_amp = False
+        self.det_early_stop = False
+        self.det_early_stop_epochs = 5
+
+        # Recognition
         self.arch = "crnn_vgg16_bn"
         self.epochs = 10
         self.batch_size = 64
@@ -700,33 +782,103 @@ def create_ui():
                             ).props("size=sm").tooltip(fname)
 
             # Page assignment grid
-            ui.label("Assign Pages to Sets").classes("font-semibold mt-4")
+            ui.separator().classes("mt-4")
+            ui.label("Assign Pages to Sets").classes("font-semibold mt-2")
 
             page_container = ui.column().classes("w-full border-l-4 border-blue-300 pl-4")
-            ui.label("Set Views (project accordion)").classes("font-semibold mt-4")
-            split_view_container = ui.column().classes("w-full border-l-4 border-emerald-300 pl-4")
+            drag_state = {"unassigned": [], "train": [], "val": []}
+            container_to_split = {}
+
+            ui.separator().classes("mt-4")
+            split_view_container = ui.column().classes("w-full mt-2")
 
             def render_split_view(split_title: str, projects_by_task: dict):
                 with split_view_container:
-                    ui.label(split_title).classes("font-semibold text-sm mt-2")
-                    with ui.row().classes("w-full gap-4"):
-                        for task_name in ("detection", "recognition"):
-                            with ui.card().classes("flex-1"):
-                                task_projects = projects_by_task.get(task_name, {})
-                                ui.label(task_name).classes("font-medium text-sm")
+                    with ui.expansion(split_title, value=False).classes("w-full"):
+                        with ui.row().classes("w-full gap-4"):
+                            for task_name in ("detection", "recognition"):
+                                with ui.card().classes("flex-1"):
+                                    task_projects = projects_by_task.get(task_name, {})
+                                    ui.label(task_name).classes("font-medium text-sm")
 
-                                if not task_projects:
-                                    ui.label("No pages").classes("text-xs text-gray-500")
-                                    continue
+                                    if not task_projects:
+                                        ui.label("No pages").classes("text-xs text-gray-500")
+                                        continue
 
-                                for project_key, page_labels in task_projects.items():
-                                    with ui.expansion(f"{project_key} ({len(page_labels)} pages)").classes("w-full"):
-                                        for page_label in page_labels:
-                                            ui.label(page_label).classes("text-xs text-gray-600")
+                                    for project_key, page_labels in task_projects.items():
+                                        with ui.expansion(f"{project_key} ({len(page_labels)} pages)").classes("w-full"):
+                                            for page_label in page_labels:
+                                                ui.label(page_label).classes("text-xs text-gray-600")
+
+            def resolve_split_from_event_value(raw_value):
+                if raw_value is None:
+                    return None
+
+                if isinstance(raw_value, dict):
+                    for key in ("id", "value", "name"):
+                        split_key = resolve_split_from_event_value(raw_value.get(key))
+                        if split_key:
+                            return split_key
+                    return None
+
+                as_str = str(raw_value).strip().lstrip("#")
+                if as_str in {"unassigned", "train", "val"}:
+                    return as_str
+
+                return container_to_split.get(as_str)
+
+            def apply_drag_state_to_assignments():
+                for split_key, page_ids in drag_state.items():
+                    target = split_key if split_key in {"train", "val"} else None
+                    for page_id in page_ids:
+                        filename, page_index = page_id.rsplit("::", 1)
+                        dataset_manager.assign_page(filename, int(page_index), target)
+
+            def on_sort_end(e, source_split: str):
+                args = getattr(e, "args", {}) or {}
+                old_index = getattr(e, "old_index", None)
+                new_index = getattr(e, "new_index", None)
+
+                if old_index is None:
+                    old_index = args.get("oldIndex")
+                if new_index is None:
+                    new_index = args.get("newIndex")
+
+                if old_index is None:
+                    return
+
+                source = resolve_split_from_event_value(args.get("from")) or source_split
+                target = resolve_split_from_event_value(args.get("to")) or source
+
+                if source not in drag_state or target not in drag_state:
+                    return
+
+                source_items = drag_state[source]
+                if old_index < 0 or old_index >= len(source_items):
+                    return
+
+                moved_page = source_items.pop(old_index)
+
+                if new_index is None:
+                    new_index = len(drag_state[target])
+
+                target_items = drag_state[target]
+                insert_at = max(0, min(new_index, len(target_items)))
+                target_items.insert(insert_at, moved_page)
+
+                apply_drag_state_to_assignments()
+                refresh_page_grid()
+                update_stats()
 
             def refresh_page_grid():
                 page_container.clear()
                 split_view_container.clear()
+                container_to_split.clear()
+                drag_state["unassigned"] = []
+                drag_state["train"] = []
+                drag_state["val"] = []
+
+                split_items = {"unassigned": [], "train": [], "val": []}
 
                 for filename, assignments in dataset_manager.assignments.items():
                     if filename not in dataset_manager.loaded_files:
@@ -734,25 +886,52 @@ def create_ui():
                     if not assignments:
                         continue
 
-                    with page_container:
-                        ui.label(f"📄 {filename}").classes("font-semibold text-sm mt-2")
+                    for page_idx, current in sorted(assignments.items(), key=lambda item: item[0]):
+                        split_key = current if current in {"train", "val"} else "unassigned"
+                        is_different = dataset_manager.is_flagged_different(filename, page_idx)
+                        label_suffix = " [different/newer]" if is_different else ""
+                        page_label = f"{Path(filename).stem} · page {page_idx + 1}{label_suffix}"
+                        page_id = f"{filename}::{page_idx}"
 
-                        with ui.row().classes("flex-wrap gap-2"):
-                            for page_idx in assignments:
-                                current = assignments[page_idx]
+                        split_items[split_key].append(
+                            {
+                                "id": page_id,
+                                "label": page_label,
+                                "different": is_different,
+                            }
+                        )
 
-                                ui.select(
-                                    options=["unassigned", "train", "val"],
-                                    value=current or "unassigned",
-                                    on_change=lambda v, f=filename, p=page_idx: (
-                                        dataset_manager.assign_page(f, p, v.value),
-                                        refresh_page_grid(),
-                                        update_stats(),
-                                    ),
-                                ).props("size=sm dense").classes("w-24")
+                with page_container:
+                    ui.label("Drag pages between Unassigned, Training, and Validation").classes(
+                        "text-sm text-gray-600"
+                    )
 
-                                if dataset_manager.is_flagged_different(filename, page_idx):
-                                    ui.label("different/newer").classes("text-xs text-amber-700")
+                    with ui.row().classes("w-full gap-4 items-start"):
+                        for split_key, title in (
+                            ("unassigned", "Unassigned"),
+                            ("train", "Training"),
+                            ("val", "Validation"),
+                        ):
+                            items = sorted(split_items[split_key], key=lambda item: item["label"])
+                            drag_state[split_key] = [item["id"] for item in items]
+
+                            with ui.card().classes("flex-1"):
+                                ui.label(f"{title} ({len(items)})").classes("font-semibold text-sm")
+
+                                drop_column = ui.column().classes("w-full min-h-40 gap-2 bg-gray-50 p-2 rounded")
+                                container_to_split[str(drop_column.id)] = split_key
+
+                                with drop_column:
+                                    for item in items:
+                                        with ui.card().classes("w-full p-2 cursor-grab active:cursor-grabbing"):
+                                            ui.label(item["label"]).classes("text-xs")
+                                            if item["different"]:
+                                                ui.label("different/newer").classes("text-xs text-amber-700")
+
+                                drop_column.make_sortable(
+                                    group="page-assignment",
+                                    on_end=lambda e, src=split_key: on_sort_end(e, src),
+                                )
 
                 split_task_pages = dataset_manager.get_combined_split_task_pages()
                 render_split_view("ml-training", split_task_pages["train"])
@@ -799,120 +978,203 @@ def create_ui():
         with ui.card().classes("flex-1"):
             ui.label("⚙️ Training Configuration").classes("text-lg font-bold")
 
-            with ui.tabs().classes("w-full"):
-                with ui.tab_panel("Basic"):
-                    ui.label("Model & Data").classes("font-semibold text-sm")
+            with ui.expansion("🔍 Detection", value=True).classes("w-full"):
+                ui.select(
+                    label="Architecture",
+                    options=[
+                        "db_resnet50",
+                        "db_resnet34",
+                        "db_mobilenet_v3_large",
+                        "linknet_resnet18",
+                        "linknet_resnet34",
+                    ],
+                    value=training_config.det_arch,
+                    on_change=lambda v: setattr(training_config, "det_arch", v.value),
+                ).classes("w-full")
 
-                    ui.select(
-                        label="Architecture",
-                        options=[
-                            "crnn_vgg16_bn",
-                            "crnn_mobilenet_v3_small",
-                            "crnn_mobilenet_v3_large",
-                        ],
-                        value=training_config.arch,
-                        on_change=lambda v: setattr(training_config, "arch", v.value),
-                    ).classes("w-full")
+                ui.number(
+                    label="Epochs",
+                    value=training_config.det_epochs,
+                    min=1,
+                    max=100,
+                    on_change=lambda v: setattr(training_config, "det_epochs", int(v.value)),
+                ).classes("w-full")
 
-                    ui.number(
-                        label="Epochs",
-                        value=training_config.epochs,
-                        min=1,
-                        max=100,
-                        on_change=lambda v: setattr(training_config, "epochs", v.value),
-                    ).classes("w-full")
+                ui.number(
+                    label="Batch Size",
+                    value=training_config.det_batch_size,
+                    min=1,
+                    max=512,
+                    on_change=lambda v: setattr(training_config, "det_batch_size", int(v.value)),
+                ).classes("w-full")
 
-                    ui.number(
-                        label="Batch Size",
-                        value=training_config.batch_size,
-                        min=1,
-                        max=512,
-                        on_change=lambda v: setattr(training_config, "batch_size", int(v.value)),
-                    ).classes("w-full")
+                ui.select(
+                    label="Optimizer",
+                    options=["adam", "adamw"],
+                    value=training_config.det_optimizer,
+                    on_change=lambda v: setattr(training_config, "det_optimizer", v.value),
+                ).classes("w-full")
 
-                    ui.select(
-                        label="Vocabulary",
-                        options=["french", "english", "digits"],
-                        value=training_config.vocab,
-                        on_change=lambda v: setattr(training_config, "vocab", v.value),
-                    ).classes("w-full")
+                ui.number(
+                    label="Learning Rate",
+                    value=training_config.det_learning_rate,
+                    min=0.00001,
+                    max=0.1,
+                    step=0.0001,
+                    format="%.5f",
+                    on_change=lambda v: setattr(training_config, "det_learning_rate", v.value),
+                ).classes("w-full")
 
-                with ui.tab_panel("Optimizer"):
-                    ui.label("Optimizer & Learning Rate").classes("font-semibold text-sm")
+                ui.number(
+                    label="Weight Decay",
+                    value=training_config.det_weight_decay,
+                    min=0,
+                    max=0.1,
+                    step=0.001,
+                    format="%.4f",
+                    on_change=lambda v: setattr(training_config, "det_weight_decay", v.value),
+                ).classes("w-full")
 
-                    ui.select(
-                        label="Optimizer",
-                        options=["adam", "adamw"],
-                        value=training_config.optimizer,
-                        on_change=lambda v: setattr(training_config, "optimizer", v.value),
-                    ).classes("w-full")
+                ui.select(
+                    label="Scheduler",
+                    options=["cosine", "onecycle", "poly"],
+                    value=training_config.det_scheduler,
+                    on_change=lambda v: setattr(training_config, "det_scheduler", v.value),
+                ).classes("w-full")
 
-                    ui.number(
-                        label="Learning Rate",
-                        value=training_config.learning_rate,
-                        min=0.00001,
-                        max=0.1,
-                        step=0.0001,
-                        format="%.5f",
-                        on_change=lambda v: setattr(training_config, "learning_rate", v.value),
-                    ).classes("w-full")
+                ui.number(
+                    label="Workers",
+                    value=training_config.det_workers,
+                    min=0,
+                    max=16,
+                    on_change=lambda v: setattr(training_config, "det_workers", int(v.value)),
+                ).classes("w-full")
 
-                    ui.number(
-                        label="Weight Decay",
-                        value=training_config.weight_decay,
-                        min=0,
-                        max=0.1,
-                        step=0.001,
-                        format="%.4f",
-                        on_change=lambda v: setattr(training_config, "weight_decay", v.value),
-                    ).classes("w-full")
+                ui.checkbox(
+                    text="Mixed Precision (AMP)",
+                    value=training_config.det_amp,
+                    on_change=lambda v: setattr(training_config, "det_amp", v.value),
+                ).classes("w-full")
 
-                    ui.select(
-                        label="Scheduler",
-                        options=["cosine", "onecycle", "poly"],
-                        value=training_config.scheduler,
-                        on_change=lambda v: setattr(training_config, "scheduler", v.value),
-                    ).classes("w-full")
+                ui.checkbox(
+                    text="Early Stopping",
+                    value=training_config.det_early_stop,
+                    on_change=lambda v: setattr(training_config, "det_early_stop", v.value),
+                ).classes("w-full")
 
-                with ui.tab_panel("Advanced"):
-                    ui.label("Advanced Options").classes("font-semibold text-sm")
+                ui.number(
+                    label="Early Stop Patience",
+                    value=training_config.det_early_stop_epochs,
+                    min=1,
+                    max=20,
+                    on_change=lambda v: setattr(training_config, "det_early_stop_epochs", int(v.value)),
+                ).classes("w-full")
 
-                    ui.number(
-                        label="Input Height",
-                        value=training_config.input_size,
-                        min=16,
-                        max=64,
-                        step=4,
-                        on_change=lambda v: setattr(training_config, "input_size", int(v.value)),
-                    ).classes("w-full")
+            with ui.expansion("🔤 Recognition", value=True).classes("w-full"):
+                ui.select(
+                    label="Architecture",
+                    options=[
+                        "crnn_vgg16_bn",
+                        "crnn_mobilenet_v3_small",
+                        "crnn_mobilenet_v3_large",
+                    ],
+                    value=training_config.arch,
+                    on_change=lambda v: setattr(training_config, "arch", v.value),
+                ).classes("w-full")
 
-                    ui.number(
-                        label="Workers",
-                        value=training_config.workers,
-                        min=0,
-                        max=16,
-                        on_change=lambda v: setattr(training_config, "workers", int(v.value)),
-                    ).classes("w-full")
+                ui.number(
+                    label="Epochs",
+                    value=training_config.epochs,
+                    min=1,
+                    max=100,
+                    on_change=lambda v: setattr(training_config, "epochs", int(v.value)),
+                ).classes("w-full")
 
-                    ui.checkbox(
-                        text="Mixed Precision (AMP)",
-                        value=training_config.amp,
-                        on_change=lambda v: setattr(training_config, "amp", v.value),
-                    ).classes("w-full")
+                ui.number(
+                    label="Batch Size",
+                    value=training_config.batch_size,
+                    min=1,
+                    max=512,
+                    on_change=lambda v: setattr(training_config, "batch_size", int(v.value)),
+                ).classes("w-full")
 
-                    ui.checkbox(
-                        text="Early Stopping",
-                        value=training_config.early_stop,
-                        on_change=lambda v: setattr(training_config, "early_stop", v.value),
-                    ).classes("w-full")
+                ui.select(
+                    label="Vocabulary",
+                    options=["french", "english", "digits"],
+                    value=training_config.vocab,
+                    on_change=lambda v: setattr(training_config, "vocab", v.value),
+                ).classes("w-full")
 
-                    ui.number(
-                        label="Early Stop Patience",
-                        value=training_config.early_stop_epochs,
-                        min=1,
-                        max=20,
-                        on_change=lambda v: setattr(training_config, "early_stop_epochs", int(v.value)),
-                    ).classes("w-full")
+                ui.select(
+                    label="Optimizer",
+                    options=["adam", "adamw"],
+                    value=training_config.optimizer,
+                    on_change=lambda v: setattr(training_config, "optimizer", v.value),
+                ).classes("w-full")
+
+                ui.number(
+                    label="Learning Rate",
+                    value=training_config.learning_rate,
+                    min=0.00001,
+                    max=0.1,
+                    step=0.0001,
+                    format="%.5f",
+                    on_change=lambda v: setattr(training_config, "learning_rate", v.value),
+                ).classes("w-full")
+
+                ui.number(
+                    label="Weight Decay",
+                    value=training_config.weight_decay,
+                    min=0,
+                    max=0.1,
+                    step=0.001,
+                    format="%.4f",
+                    on_change=lambda v: setattr(training_config, "weight_decay", v.value),
+                ).classes("w-full")
+
+                ui.select(
+                    label="Scheduler",
+                    options=["cosine", "onecycle", "poly"],
+                    value=training_config.scheduler,
+                    on_change=lambda v: setattr(training_config, "scheduler", v.value),
+                ).classes("w-full")
+
+                ui.number(
+                    label="Input Height",
+                    value=training_config.input_size,
+                    min=16,
+                    max=64,
+                    step=4,
+                    on_change=lambda v: setattr(training_config, "input_size", int(v.value)),
+                ).classes("w-full")
+
+                ui.number(
+                    label="Workers",
+                    value=training_config.workers,
+                    min=0,
+                    max=16,
+                    on_change=lambda v: setattr(training_config, "workers", int(v.value)),
+                ).classes("w-full")
+
+                ui.checkbox(
+                    text="Mixed Precision (AMP)",
+                    value=training_config.amp,
+                    on_change=lambda v: setattr(training_config, "amp", v.value),
+                ).classes("w-full")
+
+                ui.checkbox(
+                    text="Early Stopping",
+                    value=training_config.early_stop,
+                    on_change=lambda v: setattr(training_config, "early_stop", v.value),
+                ).classes("w-full")
+
+                ui.number(
+                    label="Early Stop Patience",
+                    value=training_config.early_stop_epochs,
+                    min=1,
+                    max=20,
+                    on_change=lambda v: setattr(training_config, "early_stop_epochs", int(v.value)),
+                ).classes("w-full")
 
     # ==================== TRAINING CONTROL SECTION ====================
     with ui.card().classes("w-full"):
