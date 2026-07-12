@@ -1,0 +1,2921 @@
+{
+  "source_lib": "doctr-pgdp-labeled",
+  "source_path": "matched-ocr/projectID629292e7559a8_46.png",
+  "pages": [
+    {
+      "type": "Page",
+      "width": 1250,
+      "height": 1961,
+      "page_index": 0,
+      "bounding_box": {
+        "top_left": {
+          "x": 0.10626796875,
+          "y": 0.083984375
+        },
+        "bottom_right": {
+          "x": 0.84470703125,
+          "y": 0.8857421875
+        }
+      },
+      "items": [
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.11239609374999998,
+              "y": 0.083984375
+            },
+            "bottom_right": {
+              "x": 0.84470703125,
+              "y": 0.234375
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.2763234375,
+                  "y": 0.083984375
+                },
+                "bottom_right": {
+                  "x": 0.68384375,
+                  "y": 0.1025390625
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.2763234375,
+                      "y": 0.083984375
+                    },
+                    "bottom_right": {
+                      "x": 0.68384375,
+                      "y": 0.1025390625
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "BETWEEN",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.2763234375,
+                          "y": 0.083984375
+                        },
+                        "bottom_right": {
+                          "x": 0.41573828125,
+                          "y": 0.1015625
+                        }
+                      },
+                      "ocr_confidence": 0.9849241971969604,
+                      "word_labels": [],
+                      "ground_truth_text": "BETWEEN",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "WAR",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.42646249999999997,
+                          "y": 0.0849609375
+                        },
+                        "bottom_right": {
+                          "x": 0.4969359375,
+                          "y": 0.1005859375
+                        }
+                      },
+                      "ocr_confidence": 0.9971842169761658,
+                      "word_labels": [],
+                      "ground_truth_text": "WAR",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "AND",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.50766015625,
+                          "y": 0.0859375
+                        },
+                        "bottom_right": {
+                          "x": 0.5735375,
+                          "y": 0.1015625
+                        }
+                      },
+                      "ocr_confidence": 0.790621817111969,
+                      "word_labels": [],
+                      "ground_truth_text": "AND",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "PEACE",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.58579375,
+                          "y": 0.0849609375
+                        },
+                        "bottom_right": {
+                          "x": 0.68384375,
+                          "y": 0.1025390625
+                        }
+                      },
+                      "ocr_confidence": 0.9851396679878235,
+                      "word_labels": [],
+                      "ground_truth_text": "PEACE",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            },
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.11239609374999998,
+                  "y": 0.119140625
+                },
+                "bottom_right": {
+                  "x": 0.84470703125,
+                  "y": 0.234375
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.1152,
+                      "y": 0.1198368179500255
+                    },
+                    "bottom_right": {
+                      "x": 0.8384,
+                      "y": 0.14023457419683835
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "dence.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.1152,
+                          "y": 0.1198368179500255
+                        },
+                        "bottom_right": {
+                          "x": 0.1928,
+                          "y": 0.13615502294747578
+                        }
+                      },
+                      "ocr_confidence": 0.9764943718910217,
+                      "word_labels": [],
+                      "ground_truth_text": "dence.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "The",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.2224,
+                          "y": 0.12034676185619582
+                        },
+                        "bottom_right": {
+                          "x": 0.276,
+                          "y": 0.13564507904130546
+                        }
+                      },
+                      "ocr_confidence": 0.966929018497467,
+                      "word_labels": [],
+                      "ground_truth_text": "The",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "more",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.2856,
+                          "y": 0.12544620091789904
+                        },
+                        "bottom_right": {
+                          "x": 0.3496,
+                          "y": 0.13615502294747578
+                        }
+                      },
+                      "ocr_confidence": 0.8448355793952942,
+                      "word_labels": [],
+                      "ground_truth_text": "more",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "partisan",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.36,
+                          "y": 0.12034676185619582
+                        },
+                        "bottom_right": {
+                          "x": 0.4672,
+                          "y": 0.13972463029066803
+                        }
+                      },
+                      "ocr_confidence": 0.7791145443916321,
+                      "word_labels": [],
+                      "ground_truth_text": "partisan",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "had",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.4784,
+                          "y": 0.12085670576236614
+                        },
+                        "bottom_right": {
+                          "x": 0.5272,
+                          "y": 0.13615502294747578
+                        }
+                      },
+                      "ocr_confidence": 0.5863072276115417,
+                      "word_labels": [],
+                      "ground_truth_text": "had",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "taken",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.5416,
+                          "y": 0.12085670576236614
+                        },
+                        "bottom_right": {
+                          "x": 0.6152,
+                          "y": 0.1366649668536461
+                        }
+                      },
+                      "ocr_confidence": 0.7138285636901855,
+                      "word_labels": [],
+                      "ground_truth_text": "taken",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "up",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.6288,
+                          "y": 0.12595614482406936
+                        },
+                        "bottom_right": {
+                          "x": 0.6624,
+                          "y": 0.14023457419683835
+                        }
+                      },
+                      "ocr_confidence": 0.7629168629646301,
+                      "word_labels": [],
+                      "ground_truth_text": "up",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "arms",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.6728,
+                          "y": 0.12595614482406936
+                        },
+                        "bottom_right": {
+                          "x": 0.7376,
+                          "y": 0.13717491075981642
+                        }
+                      },
+                      "ocr_confidence": 0.8538773655891418,
+                      "word_labels": [],
+                      "ground_truth_text": "arms",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "for",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.752,
+                          "y": 0.12136664966853646
+                        },
+                        "bottom_right": {
+                          "x": 0.788,
+                          "y": 0.13717491075981642
+                        }
+                      },
+                      "ocr_confidence": 0.9978805780410767,
+                      "word_labels": [],
+                      "ground_truth_text": "for",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "the",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.7976,
+                          "y": 0.12187659357470679
+                        },
+                        "bottom_right": {
+                          "x": 0.8384,
+                          "y": 0.13717491075981642
+                        }
+                      },
+                      "ocr_confidence": 0.8862382769584656,
+                      "word_labels": [],
+                      "ground_truth_text": "the",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                },
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.1152,
+                      "y": 0.1432942376338603
+                    },
+                    "bottom_right": {
+                      "x": 0.84,
+                      "y": 0.1631820499745028
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "King.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.1152,
+                          "y": 0.1432942376338603
+                        },
+                        "bottom_right": {
+                          "x": 0.188,
+                          "y": 0.16216216216216217
+                        }
+                      },
+                      "ocr_confidence": 0.6640501022338867,
+                      "word_labels": [],
+                      "ground_truth_text": "King.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "First",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.2264,
+                          "y": 0.1432942376338603
+                        },
+                        "bottom_right": {
+                          "x": 0.2888,
+                          "y": 0.15859255481896992
+                        }
+                      },
+                      "ocr_confidence": 0.9964339733123779,
+                      "word_labels": [],
+                      "ground_truth_text": "First",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "and",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.3048,
+                          "y": 0.1432942376338603
+                        },
+                        "bottom_right": {
+                          "x": 0.3544,
+                          "y": 0.15910249872514023
+                        }
+                      },
+                      "ocr_confidence": 0.5461535453796387,
+                      "word_labels": [],
+                      "ground_truth_text": "and",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "last,",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.3728,
+                          "y": 0.1432942376338603
+                        },
+                        "bottom_right": {
+                          "x": 0.428,
+                          "y": 0.16165221825599185
+                        }
+                      },
+                      "ocr_confidence": 0.605318009853363,
+                      "word_labels": [],
+                      "ground_truth_text": "last,",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "during",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.4456,
+                          "y": 0.1438041815400306
+                        },
+                        "bottom_right": {
+                          "x": 0.5328,
+                          "y": 0.1626721060683325
+                        }
+                      },
+                      "ocr_confidence": 0.8931670784950256,
+                      "word_labels": [],
+                      "ground_truth_text": "during",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "the",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.5552,
+                          "y": 0.1438041815400306
+                        },
+                        "bottom_right": {
+                          "x": 0.596,
+                          "y": 0.15961244263131055
+                        }
+                      },
+                      "ocr_confidence": 0.9635005593299866,
+                      "word_labels": [],
+                      "ground_truth_text": "the",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "five",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.6144,
+                          "y": 0.1438041815400306
+                        },
+                        "bottom_right": {
+                          "x": 0.6616,
+                          "y": 0.15961244263131055
+                        }
+                      },
+                      "ocr_confidence": 0.9409810304641724,
+                      "word_labels": [],
+                      "ground_truth_text": "five",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "years",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.6688,
+                          "y": 0.14890362060173382
+                        },
+                        "bottom_right": {
+                          "x": 0.7392,
+                          "y": 0.1631820499745028
+                        }
+                      },
+                      "ocr_confidence": 0.9794197678565979,
+                      "word_labels": [],
+                      "ground_truth_text": "years",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "of",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.7576,
+                          "y": 0.14431412544620092
+                        },
+                        "bottom_right": {
+                          "x": 0.7832,
+                          "y": 0.15961244263131055
+                        }
+                      },
+                      "ocr_confidence": 0.999962329864502,
+                      "word_labels": [],
+                      "ground_truth_text": "of",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "the",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.7992,
+                          "y": 0.14482406935237124
+                        },
+                        "bottom_right": {
+                          "x": 0.84,
+                          "y": 0.15961244263131055
+                        }
+                      },
+                      "ocr_confidence": 0.9840176701545715,
+                      "word_labels": [],
+                      "ground_truth_text": "the",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                },
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.11546015625,
+                      "y": 0.1650390625
+                    },
+                    "bottom_right": {
+                      "x": 0.84470703125,
+                      "y": 0.1875
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "fighting,",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.11546015625,
+                          "y": 0.166015625
+                        },
+                        "bottom_right": {
+                          "x": 0.22883046875000002,
+                          "y": 0.1875
+                        }
+                      },
+                      "ocr_confidence": 0.5006446242332458,
+                      "word_labels": [],
+                      "ground_truth_text": "fighting,",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "there",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.23036250000000003,
+                          "y": 0.1650390625
+                        },
+                        "bottom_right": {
+                          "x": 0.30236796875,
+                          "y": 0.1845703125
+                        }
+                      },
+                      "ocr_confidence": 0.9333626627922058,
+                      "word_labels": [],
+                      "ground_truth_text": "there",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "had",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.3039,
+                          "y": 0.1650390625
+                        },
+                        "bottom_right": {
+                          "x": 0.359053125,
+                          "y": 0.1845703125
+                        }
+                      },
+                      "ocr_confidence": 0.988307535648346,
+                      "word_labels": [],
+                      "ground_truth_text": "had",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "been",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.3621171875,
+                          "y": 0.1650390625
+                        },
+                        "bottom_right": {
+                          "x": 0.42799453125,
+                          "y": 0.1845703125
+                        }
+                      },
+                      "ocr_confidence": 0.7124437689781189,
+                      "word_labels": [],
+                      "ground_truth_text": "been",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "no",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.42799453125,
+                          "y": 0.169921875
+                        },
+                        "bottom_right": {
+                          "x": 0.469359375,
+                          "y": 0.185546875
+                        }
+                      },
+                      "ocr_confidence": 0.9997304081916809,
+                      "word_labels": [],
+                      "ground_truth_text": "no",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "fewer",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.47089140625,
+                          "y": 0.166015625
+                        },
+                        "bottom_right": {
+                          "x": 0.5459609375,
+                          "y": 0.1845703125
+                        }
+                      },
+                      "ocr_confidence": 0.5158347487449646,
+                      "word_labels": [],
+                      "ground_truth_text": "fewer",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "than",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.549025,
+                          "y": 0.166015625
+                        },
+                        "bottom_right": {
+                          "x": 0.616434375,
+                          "y": 0.1845703125
+                        }
+                      },
+                      "ocr_confidence": 0.9083074331283569,
+                      "word_labels": [],
+                      "ground_truth_text": "than",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "twenty-five",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.62103046875,
+                          "y": 0.16796875
+                        },
+                        "bottom_right": {
+                          "x": 0.76504140625,
+                          "y": 0.1865234375
+                        }
+                      },
+                      "ocr_confidence": 0.5993226170539856,
+                      "word_labels": [],
+                      "ground_truth_text": "twenty-five",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "thou-",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.7696375,
+                          "y": 0.166015625
+                        },
+                        "bottom_right": {
+                          "x": 0.84470703125,
+                          "y": 0.1845703125
+                        }
+                      },
+                      "ocr_confidence": 0.7698760628700256,
+                      "word_labels": [],
+                      "ground_truth_text": "thou-",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": "fighting, there had been no fewer than twenty-five thou-"
+                },
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.11239609374999998,
+                      "y": 0.1865234375
+                    },
+                    "bottom_right": {
+                      "x": 0.84470703125,
+                      "y": 0.2099609375
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "sand",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.11239609374999998,
+                          "y": 0.1884765625
+                        },
+                        "bottom_right": {
+                          "x": 0.18133749999999998,
+                          "y": 0.20703125
+                        }
+                      },
+                      "ocr_confidence": 0.551956295967102,
+                      "word_labels": [],
+                      "ground_truth_text": "sand",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "loyalists",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.18899765624999998,
+                          "y": 0.1884765625
+                        },
+                        "bottom_right": {
+                          "x": 0.30236796875,
+                          "y": 0.2099609375
+                        }
+                      },
+                      "ocr_confidence": 0.545455276966095,
+                      "word_labels": [],
+                      "ground_truth_text": "loyalists",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "enlisted",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.31156015625,
+                          "y": 0.1884765625
+                        },
+                        "bottom_right": {
+                          "x": 0.41573828125,
+                          "y": 0.20703125
+                        }
+                      },
+                      "ocr_confidence": 0.6487386226654053,
+                      "word_labels": [],
+                      "ground_truth_text": "enlisted",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "in",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.420334375,
+                          "y": 0.1865234375
+                        },
+                        "bottom_right": {
+                          "x": 0.457103125,
+                          "y": 0.208984375
+                        }
+                      },
+                      "ocr_confidence": 0.6925584077835083,
+                      "word_labels": [],
+                      "ground_truth_text": "in",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "the",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.46169921875,
+                          "y": 0.1884765625
+                        },
+                        "bottom_right": {
+                          "x": 0.51225625,
+                          "y": 0.2080078125
+                        }
+                      },
+                      "ocr_confidence": 0.74892258644104,
+                      "word_labels": [],
+                      "ground_truth_text": "the",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "British",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.51991640625,
+                          "y": 0.1884765625
+                        },
+                        "bottom_right": {
+                          "x": 0.61490234375,
+                          "y": 0.20703125
+                        }
+                      },
+                      "ocr_confidence": 0.9521710872650146,
+                      "word_labels": [],
+                      "ground_truth_text": "British",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "service.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.6225625,
+                          "y": 0.189453125
+                        },
+                        "bottom_right": {
+                          "x": 0.7206125,
+                          "y": 0.20703125
+                        }
+                      },
+                      "ocr_confidence": 0.7403002977371216,
+                      "word_labels": [],
+                      "ground_truth_text": "service.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "At",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.745125,
+                          "y": 0.1884765625
+                        },
+                        "bottom_right": {
+                          "x": 0.788021875,
+                          "y": 0.208984375
+                        }
+                      },
+                      "ocr_confidence": 0.9857499599456787,
+                      "word_labels": [],
+                      "ground_truth_text": "At",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "one",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.7910859375,
+                          "y": 0.193359375
+                        },
+                        "bottom_right": {
+                          "x": 0.84470703125,
+                          "y": 0.2080078125
+                        }
+                      },
+                      "ocr_confidence": 0.9891407489776611,
+                      "word_labels": [],
+                      "ground_truth_text": "one",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": "sand loyalists enlisted in the British service. At one"
+                },
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.11239609374999998,
+                      "y": 0.2109375
+                    },
+                    "bottom_right": {
+                      "x": 0.84470703125,
+                      "y": 0.234375
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "time",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.11239609374999998,
+                          "y": 0.2109375
+                        },
+                        "bottom_right": {
+                          "x": 0.17674140625,
+                          "y": 0.23046875
+                        }
+                      },
+                      "ocr_confidence": 0.8704973459243774,
+                      "word_labels": [],
+                      "ground_truth_text": "time",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "(1779)",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.18286953125,
+                          "y": 0.2109375
+                        },
+                        "bottom_right": {
+                          "x": 0.2640671875,
+                          "y": 0.2333984375
+                        }
+                      },
+                      "ocr_confidence": 0.9573287963867188,
+                      "word_labels": [],
+                      "ground_truth_text": "(1779)",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "they",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.27172734374999996,
+                          "y": 0.2109375
+                        },
+                        "bottom_right": {
+                          "x": 0.33607265625,
+                          "y": 0.234375
+                        }
+                      },
+                      "ocr_confidence": 0.8361313939094543,
+                      "word_labels": [],
+                      "ground_truth_text": "they",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "had",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.3437328125,
+                          "y": 0.2109375
+                        },
+                        "bottom_right": {
+                          "x": 0.40041796875,
+                          "y": 0.23046875
+                        }
+                      },
+                      "ocr_confidence": 0.7817419171333313,
+                      "word_labels": [],
+                      "ground_truth_text": "had",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "actually",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.40654609375,
+                          "y": 0.2119140625
+                        },
+                        "bottom_right": {
+                          "x": 0.518384375,
+                          "y": 0.234375
+                        }
+                      },
+                      "ocr_confidence": 0.6744644641876221,
+                      "word_labels": [],
+                      "ground_truth_text": "actually",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "outnumbered",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.5275765625,
+                          "y": 0.2138671875
+                        },
+                        "bottom_right": {
+                          "x": 0.69763203125,
+                          "y": 0.228515625
+                        }
+                      },
+                      "ocr_confidence": 0.5000811815261841,
+                      "word_labels": [],
+                      "ground_truth_text": "outnumbered",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "the",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.70682421875,
+                          "y": 0.2109375
+                        },
+                        "bottom_right": {
+                          "x": 0.75738125,
+                          "y": 0.23046875
+                        }
+                      },
+                      "ocr_confidence": 0.6075978875160217,
+                      "word_labels": [],
+                      "ground_truth_text": "the",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "whole",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.7635093749999999,
+                          "y": 0.2119140625
+                        },
+                        "bottom_right": {
+                          "x": 0.84470703125,
+                          "y": 0.23046875
+                        }
+                      },
+                      "ocr_confidence": 0.7838731408119202,
+                      "word_labels": [],
+                      "ground_truth_text": "whole",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        },
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.10626796875,
+              "y": 0.7001953125
+            },
+            "bottom_right": {
+              "x": 0.84164296875,
+              "y": 0.8857421875
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.395821875,
+                  "y": 0.7001953125
+                },
+                "bottom_right": {
+                  "x": 0.555153125,
+                  "y": 0.7119140625
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.395821875,
+                      "y": 0.7001953125
+                    },
+                    "bottom_right": {
+                      "x": 0.555153125,
+                      "y": 0.7119140625
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "MOUNT",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.395821875,
+                          "y": 0.7001953125
+                        },
+                        "bottom_right": {
+                          "x": 0.46782734375,
+                          "y": 0.7119140625
+                        }
+                      },
+                      "ocr_confidence": 0.6146100759506226,
+                      "word_labels": [],
+                      "ground_truth_text": "MOUNT",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "VERNON",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.4724234375,
+                          "y": 0.7001953125
+                        },
+                        "bottom_right": {
+                          "x": 0.555153125,
+                          "y": 0.7119140625
+                        }
+                      },
+                      "ocr_confidence": 0.9013518691062927,
+                      "word_labels": [],
+                      "ground_truth_text": "VERNON",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            },
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.10626796875,
+                  "y": 0.7265625
+                },
+                "bottom_right": {
+                  "x": 0.84164296875,
+                  "y": 0.865234375
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.1078,
+                      "y": 0.7265625
+                    },
+                    "bottom_right": {
+                      "x": 0.84164296875,
+                      "y": 0.75
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "of",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.1078,
+                          "y": 0.7275390625
+                        },
+                        "bottom_right": {
+                          "x": 0.1415046875,
+                          "y": 0.7470703125
+                        }
+                      },
+                      "ocr_confidence": 0.7530673146247864,
+                      "word_labels": [],
+                      "ground_truth_text": "of",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "the",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.14456875000000002,
+                          "y": 0.7265625
+                        },
+                        "bottom_right": {
+                          "x": 0.19359375,
+                          "y": 0.7470703125
+                        }
+                      },
+                      "ocr_confidence": 0.8002219796180725,
+                      "word_labels": [],
+                      "ground_truth_text": "the",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "continental",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.19665781249999997,
+                          "y": 0.728515625
+                        },
+                        "bottom_right": {
+                          "x": 0.3437328125,
+                          "y": 0.74609375
+                        }
+                      },
+                      "ocr_confidence": 0.5088768601417542,
+                      "word_labels": [],
+                      "ground_truth_text": "continental",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "muster",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.35139296875000003,
+                          "y": 0.728515625
+                        },
+                        "bottom_right": {
+                          "x": 0.44637890625,
+                          "y": 0.7470703125
+                        }
+                      },
+                      "ocr_confidence": 0.7230967283248901,
+                      "word_labels": [],
+                      "ground_truth_text": "muster",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "under",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.44944296875,
+                          "y": 0.7265625
+                        },
+                        "bottom_right": {
+                          "x": 0.5337046875,
+                          "y": 0.748046875
+                        }
+                      },
+                      "ocr_confidence": 0.9054102897644043,
+                      "word_labels": [],
+                      "ground_truth_text": "under",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "the",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.53523671875,
+                          "y": 0.7275390625
+                        },
+                        "bottom_right": {
+                          "x": 0.58579375,
+                          "y": 0.748046875
+                        }
+                      },
+                      "ocr_confidence": 0.8831415176391602,
+                      "word_labels": [],
+                      "ground_truth_text": "the",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "personal",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.58732578125,
+                          "y": 0.728515625
+                        },
+                        "bottom_right": {
+                          "x": 0.70376015625,
+                          "y": 0.75
+                        }
+                      },
+                      "ocr_confidence": 0.8423569202423096,
+                      "word_labels": [],
+                      "ground_truth_text": "personal",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "command",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.70682421875,
+                          "y": 0.7265625
+                        },
+                        "bottom_right": {
+                          "x": 0.84164296875,
+                          "y": 0.748046875
+                        }
+                      },
+                      "ocr_confidence": 0.6704981327056885,
+                      "word_labels": [],
+                      "ground_truth_text": "command",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                },
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.10626796875,
+                      "y": 0.7490234375
+                    },
+                    "bottom_right": {
+                      "x": 0.84164296875,
+                      "y": 0.7724609375
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "of",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.10626796875,
+                          "y": 0.7490234375
+                        },
+                        "bottom_right": {
+                          "x": 0.14456875000000002,
+                          "y": 0.7705078125
+                        }
+                      },
+                      "ocr_confidence": 0.9975640773773193,
+                      "word_labels": [],
+                      "ground_truth_text": "of",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "Washington.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.150696875,
+                          "y": 0.751953125
+                        },
+                        "bottom_right": {
+                          "x": 0.31768828125000004,
+                          "y": 0.7724609375
+                        }
+                      },
+                      "ocr_confidence": 0.7297590970993042,
+                      "word_labels": [],
+                      "ground_truth_text": "Washington.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "Most",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.34220078125,
+                          "y": 0.7509765625
+                        },
+                        "bottom_right": {
+                          "x": 0.41267421875,
+                          "y": 0.76953125
+                        }
+                      },
+                      "ocr_confidence": 0.9945395588874817,
+                      "word_labels": [],
+                      "ground_truth_text": "Most",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "of",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.42186640625,
+                          "y": 0.7509765625
+                        },
+                        "bottom_right": {
+                          "x": 0.4540390625,
+                          "y": 0.76953125
+                        }
+                      },
+                      "ocr_confidence": 0.8537176847457886,
+                      "word_labels": [],
+                      "ground_truth_text": "of",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "those,",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.46323125,
+                          "y": 0.7509765625
+                        },
+                        "bottom_right": {
+                          "x": 0.5459609375,
+                          "y": 0.7724609375
+                        }
+                      },
+                      "ocr_confidence": 0.6263436675071716,
+                      "word_labels": [],
+                      "ground_truth_text": "those,",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "however,",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.555153125,
+                          "y": 0.7509765625
+                        },
+                        "bottom_right": {
+                          "x": 0.6746515625,
+                          "y": 0.7724609375
+                        }
+                      },
+                      "ocr_confidence": 0.5374771952629089,
+                      "word_labels": [],
+                      "ground_truth_text": "however,",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "who",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.68384375,
+                          "y": 0.7490234375
+                        },
+                        "bottom_right": {
+                          "x": 0.7481890625000001,
+                          "y": 0.771484375
+                        }
+                      },
+                      "ocr_confidence": 0.9889935851097107,
+                      "word_labels": [],
+                      "ground_truth_text": "who",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "would",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.7543171875,
+                          "y": 0.7490234375
+                        },
+                        "bottom_right": {
+                          "x": 0.84164296875,
+                          "y": 0.7705078125
+                        }
+                      },
+                      "ocr_confidence": 0.6087490320205688,
+                      "word_labels": [],
+                      "ground_truth_text": "would",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                },
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.10933203125000002,
+                      "y": 0.7724609375
+                    },
+                    "bottom_right": {
+                      "x": 0.84164296875,
+                      "y": 0.796875
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "not",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.10933203125000002,
+                          "y": 0.7734375
+                        },
+                        "bottom_right": {
+                          "x": 0.1598890625,
+                          "y": 0.79296875
+                        }
+                      },
+                      "ocr_confidence": 0.9956327080726624,
+                      "word_labels": [],
+                      "ground_truth_text": "not",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "join",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.16295312499999998,
+                          "y": 0.7724609375
+                        },
+                        "bottom_right": {
+                          "x": 0.22117031250000002,
+                          "y": 0.796875
+                        }
+                      },
+                      "ocr_confidence": 0.9915737509727478,
+                      "word_labels": [],
+                      "ground_truth_text": "join",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "the",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.22576640625,
+                          "y": 0.7734375
+                        },
+                        "bottom_right": {
+                          "x": 0.2763234375,
+                          "y": 0.79296875
+                        }
+                      },
+                      "ocr_confidence": 0.6672333478927612,
+                      "word_labels": [],
+                      "ground_truth_text": "the",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "patriot",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.28245156250000003,
+                          "y": 0.7744140625
+                        },
+                        "bottom_right": {
+                          "x": 0.37437343749999996,
+                          "y": 0.796875
+                        }
+                      },
+                      "ocr_confidence": 0.7897887229919434,
+                      "word_labels": [],
+                      "ground_truth_text": "patriot",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "party",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.38203359375,
+                          "y": 0.7744140625
+                        },
+                        "bottom_right": {
+                          "x": 0.46169921875,
+                          "y": 0.796875
+                        }
+                      },
+                      "ocr_confidence": 0.9436351656913757,
+                      "word_labels": [],
+                      "ground_truth_text": "party",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "had",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.46782734375,
+                          "y": 0.7734375
+                        },
+                        "bottom_right": {
+                          "x": 0.5245125,
+                          "y": 0.79296875
+                        }
+                      },
+                      "ocr_confidence": 0.8507035374641418,
+                      "word_labels": [],
+                      "ground_truth_text": "had",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "been",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.530640625,
+                          "y": 0.7734375
+                        },
+                        "bottom_right": {
+                          "x": 0.59805,
+                          "y": 0.79296875
+                        }
+                      },
+                      "ocr_confidence": 0.9534307718276978,
+                      "word_labels": [],
+                      "ground_truth_text": "been",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "quiet",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.604178125,
+                          "y": 0.7734375
+                        },
+                        "bottom_right": {
+                          "x": 0.677715625,
+                          "y": 0.796875
+                        }
+                      },
+                      "ocr_confidence": 0.625463604927063,
+                      "word_labels": [],
+                      "ground_truth_text": "quiet",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "non-comba-",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.68384375,
+                          "y": 0.7724609375
+                        },
+                        "bottom_right": {
+                          "x": 0.84164296875,
+                          "y": 0.79296875
+                        }
+                      },
+                      "ocr_confidence": 0.921279788017273,
+                      "word_labels": [],
+                      "ground_truth_text": "non-comba-",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": "not join the patriot party had been quiet non-comba-"
+                },
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.10933203125000002,
+                      "y": 0.794921875
+                    },
+                    "bottom_right": {
+                      "x": 0.84164296875,
+                      "y": 0.8193359375
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "tants,",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.10933203125000002,
+                          "y": 0.796875
+                        },
+                        "bottom_right": {
+                          "x": 0.1905296875,
+                          "y": 0.818359375
+                        }
+                      },
+                      "ocr_confidence": 0.7243115901947021,
+                      "word_labels": [],
+                      "ground_truth_text": "tants,",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "and",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.19206171875,
+                          "y": 0.796875
+                        },
+                        "bottom_right": {
+                          "x": 0.24874687499999998,
+                          "y": 0.8154296875
+                        }
+                      },
+                      "ocr_confidence": 0.905215322971344,
+                      "word_labels": [],
+                      "ground_truth_text": "and",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "had",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.25487499999999996,
+                          "y": 0.796875
+                        },
+                        "bottom_right": {
+                          "x": 0.31156015625,
+                          "y": 0.8154296875
+                        }
+                      },
+                      "ocr_confidence": 0.8911907076835632,
+                      "word_labels": [],
+                      "ground_truth_text": "had",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "been",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.31768828125000004,
+                          "y": 0.796875
+                        },
+                        "bottom_right": {
+                          "x": 0.383565625,
+                          "y": 0.8154296875
+                        }
+                      },
+                      "ocr_confidence": 0.5474733114242554,
+                      "word_labels": [],
+                      "ground_truth_text": "been",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "opponents",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.39275781249999997,
+                          "y": 0.7998046875
+                        },
+                        "bottom_right": {
+                          "x": 0.52604453125,
+                          "y": 0.818359375
+                        }
+                      },
+                      "ocr_confidence": 0.5991237759590149,
+                      "word_labels": [],
+                      "ground_truth_text": "opponents",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "of",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.53217265625,
+                          "y": 0.7958984375
+                        },
+                        "bottom_right": {
+                          "x": 0.56587734375,
+                          "y": 0.8154296875
+                        }
+                      },
+                      "ocr_confidence": 0.9644982814788818,
+                      "word_labels": [],
+                      "ground_truth_text": "of",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "the",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.5704734375,
+                          "y": 0.7958984375
+                        },
+                        "bottom_right": {
+                          "x": 0.62103046875,
+                          "y": 0.8154296875
+                        }
+                      },
+                      "ocr_confidence": 0.8353959321975708,
+                      "word_labels": [],
+                      "ground_truth_text": "the",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "revolution",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.63328671875,
+                          "y": 0.796875
+                        },
+                        "bottom_right": {
+                          "x": 0.76810546875,
+                          "y": 0.814453125
+                        }
+                      },
+                      "ocr_confidence": 0.7466656565666199,
+                      "word_labels": [],
+                      "ground_truth_text": "revolution",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "only",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.775765625,
+                          "y": 0.794921875
+                        },
+                        "bottom_right": {
+                          "x": 0.84164296875,
+                          "y": 0.8193359375
+                        }
+                      },
+                      "ocr_confidence": 0.988851010799408,
+                      "word_labels": [],
+                      "ground_truth_text": "only",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": "tants, and had been opponents of the revolution only"
+                },
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.11086406250000003,
+                      "y": 0.818359375
+                    },
+                    "bottom_right": {
+                      "x": 0.84164296875,
+                      "y": 0.841796875
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "in",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.11086406250000003,
+                          "y": 0.818359375
+                        },
+                        "bottom_right": {
+                          "x": 0.14456875000000002,
+                          "y": 0.837890625
+                        }
+                      },
+                      "ocr_confidence": 0.8128779530525208,
+                      "word_labels": [],
+                      "ground_truth_text": "in",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "opinion.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.14456875000000002,
+                          "y": 0.8203125
+                        },
+                        "bottom_right": {
+                          "x": 0.2518109375,
+                          "y": 0.841796875
+                        }
+                      },
+                      "ocr_confidence": 0.8115664124488831,
+                      "word_labels": [],
+                      "ground_truth_text": "opinion.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "When",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.27479140625,
+                          "y": 0.8193359375
+                        },
+                        "bottom_right": {
+                          "x": 0.35752109374999996,
+                          "y": 0.837890625
+                        }
+                      },
+                      "ocr_confidence": 0.636452853679657,
+                      "word_labels": [],
+                      "ground_truth_text": "When",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "the",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.35752109374999996,
+                          "y": 0.8193359375
+                        },
+                        "bottom_right": {
+                          "x": 0.408078125,
+                          "y": 0.8388671875
+                        }
+                      },
+                      "ocr_confidence": 0.7618016600608826,
+                      "word_labels": [],
+                      "ground_truth_text": "the",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "war",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.408078125,
+                          "y": 0.8251953125
+                        },
+                        "bottom_right": {
+                          "x": 0.46323125,
+                          "y": 0.8369140625
+                        }
+                      },
+                      "ocr_confidence": 0.8346641063690186,
+                      "word_labels": [],
+                      "ground_truth_text": "war",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "was",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.46476328125,
+                          "y": 0.82421875
+                        },
+                        "bottom_right": {
+                          "x": 0.52298046875,
+                          "y": 0.8388671875
+                        }
+                      },
+                      "ocr_confidence": 0.9477413892745972,
+                      "word_labels": [],
+                      "ground_truth_text": "was",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "over",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.5245125,
+                          "y": 0.8251953125
+                        },
+                        "bottom_right": {
+                          "x": 0.58426171875,
+                          "y": 0.8369140625
+                        }
+                      },
+                      "ocr_confidence": 0.6378191113471985,
+                      "word_labels": [],
+                      "ground_truth_text": "over",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "the",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.58579375,
+                          "y": 0.8193359375
+                        },
+                        "bottom_right": {
+                          "x": 0.63481875,
+                          "y": 0.8388671875
+                        }
+                      },
+                      "ocr_confidence": 0.7831684350967407,
+                      "word_labels": [],
+                      "ground_truth_text": "the",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "men",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.63481875,
+                          "y": 0.8232421875
+                        },
+                        "bottom_right": {
+                          "x": 0.69763203125,
+                          "y": 0.837890625
+                        }
+                      },
+                      "ocr_confidence": 0.6781660914421082,
+                      "word_labels": [],
+                      "ground_truth_text": "men",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "who",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.69763203125,
+                          "y": 0.818359375
+                        },
+                        "bottom_right": {
+                          "x": 0.75891328125,
+                          "y": 0.837890625
+                        }
+                      },
+                      "ocr_confidence": 0.9335973262786865,
+                      "word_labels": [],
+                      "ground_truth_text": "who",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "spoke",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.7604453125,
+                          "y": 0.818359375
+                        },
+                        "bottom_right": {
+                          "x": 0.84164296875,
+                          "y": 0.841796875
+                        }
+                      },
+                      "ocr_confidence": 0.58389812707901,
+                      "word_labels": [],
+                      "ground_truth_text": "spoke",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                },
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.11086406250000003,
+                      "y": 0.841796875
+                    },
+                    "bottom_right": {
+                      "x": 0.83857890625,
+                      "y": 0.865234375
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "the",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.11086406250000003,
+                          "y": 0.841796875
+                        },
+                        "bottom_right": {
+                          "x": 0.15835703125,
+                          "y": 0.861328125
+                        }
+                      },
+                      "ocr_confidence": 0.790212094783783,
+                      "word_labels": [],
+                      "ground_truth_text": "the",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "mind",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.15835703125,
+                          "y": 0.8427734375
+                        },
+                        "bottom_right": {
+                          "x": 0.23036250000000003,
+                          "y": 0.861328125
+                        }
+                      },
+                      "ocr_confidence": 0.5118557810783386,
+                      "word_labels": [],
+                      "ground_truth_text": "mind",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "of",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.23036250000000003,
+                          "y": 0.841796875
+                        },
+                        "bottom_right": {
+                          "x": 0.2640671875,
+                          "y": 0.861328125
+                        }
+                      },
+                      "ocr_confidence": 0.6491658091545105,
+                      "word_labels": [],
+                      "ground_truth_text": "of",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "the",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.2640671875,
+                          "y": 0.841796875
+                        },
+                        "bottom_right": {
+                          "x": 0.3130921875,
+                          "y": 0.861328125
+                        }
+                      },
+                      "ocr_confidence": 0.889518141746521,
+                      "word_labels": [],
+                      "ground_truth_text": "the",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "majority",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.3130921875,
+                          "y": 0.8427734375
+                        },
+                        "bottom_right": {
+                          "x": 0.42799453125,
+                          "y": 0.865234375
+                        }
+                      },
+                      "ocr_confidence": 0.6985208988189697,
+                      "word_labels": [],
+                      "ground_truth_text": "majority",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "and",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.4295265625,
+                          "y": 0.841796875
+                        },
+                        "bottom_right": {
+                          "x": 0.48774375,
+                          "y": 0.861328125
+                        }
+                      },
+                      "ocr_confidence": 0.5417780876159668,
+                      "word_labels": [],
+                      "ground_truth_text": "and",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "who",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.48621171875,
+                          "y": 0.841796875
+                        },
+                        "bottom_right": {
+                          "x": 0.54749296875,
+                          "y": 0.861328125
+                        }
+                      },
+                      "ocr_confidence": 0.9071378111839294,
+                      "word_labels": [],
+                      "ground_truth_text": "who",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "accordingly",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.549025,
+                          "y": 0.841796875
+                        },
+                        "bottom_right": {
+                          "x": 0.7052921875,
+                          "y": 0.86328125
+                        }
+                      },
+                      "ocr_confidence": 0.9934387803077698,
+                      "word_labels": [],
+                      "ground_truth_text": "accordingly",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "controlled",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.70835625,
+                          "y": 0.841796875
+                        },
+                        "bottom_right": {
+                          "x": 0.83857890625,
+                          "y": 0.859375
+                        }
+                      },
+                      "ocr_confidence": 0.8732896447181702,
+                      "word_labels": [],
+                      "ground_truth_text": "controlled",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            },
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.13997265625,
+                  "y": 0.8623046875
+                },
+                "bottom_right": {
+                  "x": 0.2579390625,
+                  "y": 0.876953125
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.13997265625,
+                      "y": 0.8623046875
+                    },
+                    "bottom_right": {
+                      "x": 0.2579390625,
+                      "y": 0.876953125
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "voL.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.13997265625,
+                          "y": 0.86328125
+                        },
+                        "bottom_right": {
+                          "x": 0.18133749999999998,
+                          "y": 0.875
+                        }
+                      },
+                      "ocr_confidence": 0.512883722782135,
+                      "word_labels": [],
+                      "ground_truth_text": "VOL.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_score": 50
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "1I.—4",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.19665781249999997,
+                          "y": 0.8623046875
+                        },
+                        "bottom_right": {
+                          "x": 0.2579390625,
+                          "y": 0.876953125
+                        }
+                      },
+                      "ocr_confidence": 0.580337643623352,
+                      "word_labels": [],
+                      "ground_truth_text": "III.—4",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_score": 73
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            },
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.45863515625,
+                  "y": 0.8671875
+                },
+                "bottom_right": {
+                  "x": 0.493871875,
+                  "y": 0.8857421875
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.45863515625,
+                      "y": 0.8671875
+                    },
+                    "bottom_right": {
+                      "x": 0.493871875,
+                      "y": 0.8857421875
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "27",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.45863515625,
+                          "y": 0.8671875
+                        },
+                        "bottom_right": {
+                          "x": 0.493871875,
+                          "y": 0.8857421875
+                        }
+                      },
+                      "ocr_confidence": 0.6173033714294434,
+                      "word_labels": [],
+                      "ground_truth_text": "27",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        }
+      ]
+    }
+  ]
+}

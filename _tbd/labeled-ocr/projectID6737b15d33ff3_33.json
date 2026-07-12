@@ -1,0 +1,398 @@
+{
+  "source_lib": "doctr-pgdp-labeled",
+  "source_path": "matched-ocr/projectID6737b15d33ff3_33.png",
+  "pages": [
+    {
+      "type": "Page",
+      "width": 700,
+      "height": 583,
+      "page_index": 0,
+      "bounding_box": {
+        "top_left": {
+          "x": 0.18857142857142858,
+          "y": 0.9245283018867925
+        },
+        "bottom_right": {
+          "x": 0.8157142857142857,
+          "y": 0.9897084048027445
+        }
+      },
+      "items": [
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.18857142857142858,
+              "y": 0.9245283018867925
+            },
+            "bottom_right": {
+              "x": 0.8157142857142857,
+              "y": 0.9897084048027445
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.18857142857142858,
+                  "y": 0.9245283018867925
+                },
+                "bottom_right": {
+                  "x": 0.8157142857142857,
+                  "y": 0.9571183533447685
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.18857142857142858,
+                      "y": 0.9245283018867925
+                    },
+                    "bottom_right": {
+                      "x": 0.8157142857142857,
+                      "y": 0.9571183533447685
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "F1G.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.18857142857142858,
+                          "y": 0.9296740994854202
+                        },
+                        "bottom_right": {
+                          "x": 0.23285714285714285,
+                          "y": 0.9536878216123499
+                        }
+                      },
+                      "ocr_confidence": 0.8621828556060791,
+                      "word_labels": [],
+                      "ground_truth_text": "FIG.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-replace-word-replace",
+                        "match_score": 75
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "5.—EWE",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.24428571428571427,
+                          "y": 0.9279588336192109
+                        },
+                        "bottom_right": {
+                          "x": 0.3457142857142857,
+                          "y": 0.9571183533447685
+                        }
+                      },
+                      "ocr_confidence": 0.9211624264717102,
+                      "word_labels": [],
+                      "ground_truth_text": "5.—EWE",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "AND",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.3557142857142857,
+                          "y": 0.9279588336192109
+                        },
+                        "bottom_right": {
+                          "x": 0.41285714285714287,
+                          "y": 0.9519725557461407
+                        }
+                      },
+                      "ocr_confidence": 0.8499491810798645,
+                      "word_labels": [],
+                      "ground_truth_text": "AND",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "LAMB.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.4228571428571429,
+                          "y": 0.9262435677530018
+                        },
+                        "bottom_right": {
+                          "x": 0.5014285714285714,
+                          "y": 0.9519725557461407
+                        }
+                      },
+                      "ocr_confidence": 0.8191211223602295,
+                      "word_labels": [],
+                      "ground_truth_text": "LAMB.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "From",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.5242857142857142,
+                          "y": 0.9262435677530018
+                        },
+                        "bottom_right": {
+                          "x": 0.5814285714285714,
+                          "y": 0.9502572898799314
+                        }
+                      },
+                      "ocr_confidence": 0.7790167927742004,
+                      "word_labels": [],
+                      "ground_truth_text": "From",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "a",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.5871428571428572,
+                          "y": 0.9331046312178388
+                        },
+                        "bottom_right": {
+                          "x": 0.6,
+                          "y": 0.9502572898799314
+                        }
+                      },
+                      "ocr_confidence": 0.9991593360900879,
+                      "word_labels": [],
+                      "ground_truth_text": "a",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "wcll-hcad",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.6057142857142858,
+                          "y": 0.9245283018867925
+                        },
+                        "bottom_right": {
+                          "x": 0.7042857142857143,
+                          "y": 0.9502572898799314
+                        }
+                      },
+                      "ocr_confidence": 0.5298362374305725,
+                      "word_labels": [],
+                      "ground_truth_text": "well-head",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-replace-word-replace",
+                        "match_score": 78
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "at",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.71,
+                          "y": 0.9313893653516295
+                        },
+                        "bottom_right": {
+                          "x": 0.7314285714285714,
+                          "y": 0.9502572898799314
+                        }
+                      },
+                      "ocr_confidence": 0.9045012593269348,
+                      "word_labels": [],
+                      "ground_truth_text": "at",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "Vienna.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.7371428571428571,
+                          "y": 0.9245283018867925
+                        },
+                        "bottom_right": {
+                          "x": 0.8157142857142857,
+                          "y": 0.9502572898799314
+                        }
+                      },
+                      "ocr_confidence": 0.6740652322769165,
+                      "word_labels": [],
+                      "ground_truth_text": "Vienna.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": "Fig. 5.—EWE AND LAMB. From a well-head at Vienna."
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            },
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.4471428571428571,
+                  "y": 0.9605488850771869
+                },
+                "bottom_right": {
+                  "x": 0.5614285714285714,
+                  "y": 0.9897084048027445
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.4471428571428571,
+                      "y": 0.9605488850771869
+                    },
+                    "bottom_right": {
+                      "x": 0.5614285714285714,
+                      "y": 0.9897084048027445
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "Scc",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.4471428571428571,
+                          "y": 0.9605488850771869
+                        },
+                        "bottom_right": {
+                          "x": 0.4828571428571429,
+                          "y": 0.9845626072041166
+                        }
+                      },
+                      "ocr_confidence": 0.9370822906494141,
+                      "word_labels": [],
+                      "ground_truth_text": "See",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-replace-word-replace",
+                        "match_score": 33
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "page",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.48714285714285716,
+                          "y": 0.9656946826758147
+                        },
+                        "bottom_right": {
+                          "x": 0.5371428571428571,
+                          "y": 0.9897084048027445
+                        }
+                      },
+                      "ocr_confidence": 0.9002705216407776,
+                      "word_labels": [],
+                      "ground_truth_text": "page",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "3.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.5442857142857143,
+                          "y": 0.9656946826758147
+                        },
+                        "bottom_right": {
+                          "x": 0.5614285714285714,
+                          "y": 0.9879931389365352
+                        }
+                      },
+                      "ocr_confidence": 0.86234050989151,
+                      "word_labels": [],
+                      "ground_truth_text": "3.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": "See page 3."
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        }
+      ]
+    }
+  ]
+}

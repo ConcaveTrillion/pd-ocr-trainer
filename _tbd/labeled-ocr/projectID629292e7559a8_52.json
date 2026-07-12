@@ -1,0 +1,134 @@
+{
+  "source_lib": "doctr-pgdp-labeled",
+  "source_path": "matched-ocr/projectID629292e7559a8_52.png",
+  "pages": [
+    {
+      "type": "Page",
+      "width": 1250,
+      "height": 1961,
+      "page_index": 0,
+      "bounding_box": {
+        "top_left": {
+          "x": 0.3376046875,
+          "y": 0.861328125
+        },
+        "bottom_right": {
+          "x": 0.6440109375,
+          "y": 0.8935546875
+        }
+      },
+      "items": [
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.3376046875,
+              "y": 0.861328125
+            },
+            "bottom_right": {
+              "x": 0.6440109375,
+              "y": 0.8935546875
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.3376046875,
+                  "y": 0.8798828125
+                },
+                "bottom_right": {
+                  "x": 0.567409375,
+                  "y": 0.8935546875
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.3376046875,
+                      "y": 0.8798828125
+                    },
+                    "bottom_right": {
+                      "x": 0.567409375,
+                      "y": 0.8935546875
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "ALEXANDER",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.3376046875,
+                          "y": 0.8798828125
+                        },
+                        "bottom_right": {
+                          "x": 0.4601671875,
+                          "y": 0.8935546875
+                        }
+                      },
+                      "ocr_confidence": 0.8025929927825928,
+                      "word_labels": [],
+                      "ground_truth_text": "ALEXANDER",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "HAMILTON",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.46323125,
+                          "y": 0.880859375
+                        },
+                        "bottom_right": {
+                          "x": 0.567409375,
+                          "y": 0.892578125
+                        }
+                      },
+                      "ocr_confidence": 0.5633037686347961,
+                      "word_labels": [],
+                      "ground_truth_text": "HAMILTON",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        }
+      ]
+    }
+  ]
+}

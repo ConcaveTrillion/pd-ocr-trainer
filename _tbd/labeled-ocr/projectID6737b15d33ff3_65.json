@@ -1,0 +1,662 @@
+{
+  "source_lib": "doctr-pgdp-labeled",
+  "source_path": "matched-ocr/projectID6737b15d33ff3_65.png",
+  "pages": [
+    {
+      "type": "Page",
+      "width": 700,
+      "height": 524,
+      "page_index": 0,
+      "bounding_box": {
+        "top_left": {
+          "x": 0.10142857142857142,
+          "y": 0.916030534351145
+        },
+        "bottom_right": {
+          "x": 0.91,
+          "y": 0.9923664122137404
+        }
+      },
+      "items": [
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.10142857142857142,
+              "y": 0.916030534351145
+            },
+            "bottom_right": {
+              "x": 0.91,
+              "y": 0.9923664122137404
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.10142857142857142,
+                  "y": 0.916030534351145
+                },
+                "bottom_right": {
+                  "x": 0.91,
+                  "y": 0.9923664122137404
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.10142857142857142,
+                      "y": 0.916030534351145
+                    },
+                    "bottom_right": {
+                      "x": 0.91,
+                      "y": 0.9522900763358778
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "FIG.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.10142857142857142,
+                          "y": 0.9255725190839694
+                        },
+                        "bottom_right": {
+                          "x": 0.13857142857142857,
+                          "y": 0.9484732824427481
+                        }
+                      },
+                      "ocr_confidence": 0.9917837381362915,
+                      "word_labels": [],
+                      "ground_truth_text": "FIG.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-replace-word-replace",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "13.—SITE",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.14857142857142858,
+                          "y": 0.9236641221374046
+                        },
+                        "bottom_right": {
+                          "x": 0.24,
+                          "y": 0.9522900763358778
+                        }
+                      },
+                      "ocr_confidence": 0.5923728942871094,
+                      "word_labels": [],
+                      "ground_truth_text": "13.—SITE",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "OF",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.25,
+                          "y": 0.9217557251908397
+                        },
+                        "bottom_right": {
+                          "x": 0.28,
+                          "y": 0.9465648854961832
+                        }
+                      },
+                      "ocr_confidence": 0.9891844987869263,
+                      "word_labels": [],
+                      "ground_truth_text": "OF",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "TEMPLE",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.29,
+                          "y": 0.9198473282442748
+                        },
+                        "bottom_right": {
+                          "x": 0.37714285714285717,
+                          "y": 0.9446564885496184
+                        }
+                      },
+                      "ocr_confidence": 0.6419966816902161,
+                      "word_labels": [],
+                      "ground_truth_text": "TEMPLE",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "OF",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.3871428571428571,
+                          "y": 0.9198473282442748
+                        },
+                        "bottom_right": {
+                          "x": 0.4185714285714286,
+                          "y": 0.9446564885496184
+                        }
+                      },
+                      "ocr_confidence": 0.7101030945777893,
+                      "word_labels": [],
+                      "ground_truth_text": "OF",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "AESCULAPIUS,",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.43,
+                          "y": 0.9179389312977099
+                        },
+                        "bottom_right": {
+                          "x": 0.5742857142857143,
+                          "y": 0.9446564885496184
+                        }
+                      },
+                      "ocr_confidence": 0.94493567943573,
+                      "word_labels": [],
+                      "ground_truth_text": "AESCULAPIUS,",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "THE",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.5857142857142857,
+                          "y": 0.9179389312977099
+                        },
+                        "bottom_right": {
+                          "x": 0.6314285714285715,
+                          "y": 0.9427480916030534
+                        }
+                      },
+                      "ocr_confidence": 0.9156956076622009,
+                      "word_labels": [],
+                      "ground_truth_text": "THE",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "FIRST",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.6414285714285715,
+                          "y": 0.9179389312977099
+                        },
+                        "bottom_right": {
+                          "x": 0.7014285714285714,
+                          "y": 0.9408396946564885
+                        }
+                      },
+                      "ocr_confidence": 0.9812982082366943,
+                      "word_labels": [],
+                      "ground_truth_text": "FIRST",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "ROMAN",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.7128571428571429,
+                          "y": 0.916030534351145
+                        },
+                        "bottom_right": {
+                          "x": 0.7928571428571428,
+                          "y": 0.9408396946564885
+                        }
+                      },
+                      "ocr_confidence": 0.8339342474937439,
+                      "word_labels": [],
+                      "ground_truth_text": "ROMAN",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "HOSPITAL",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.8042857142857143,
+                          "y": 0.916030534351145
+                        },
+                        "bottom_right": {
+                          "x": 0.91,
+                          "y": 0.9408396946564885
+                        }
+                      },
+                      "ocr_confidence": 0.9846165180206299,
+                      "word_labels": [],
+                      "ground_truth_text": "HOSPITAL",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": "Fig. 13.—SITE OF TEMPLE OF AESCULAPIUS, THE FIRST ROMAN HOSPITAL"
+                },
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.11857142857142858,
+                      "y": 0.9561068702290076
+                    },
+                    "bottom_right": {
+                      "x": 0.89,
+                      "y": 0.9923664122137404
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "On",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.11857142857142858,
+                          "y": 0.9637404580152672
+                        },
+                        "bottom_right": {
+                          "x": 0.14857142857142858,
+                          "y": 0.9866412213740458
+                        }
+                      },
+                      "ocr_confidence": 0.9998151659965515,
+                      "word_labels": [],
+                      "ground_truth_text": "On",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "the",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.15285714285714286,
+                          "y": 0.9637404580152672
+                        },
+                        "bottom_right": {
+                          "x": 0.18,
+                          "y": 0.9866412213740458
+                        }
+                      },
+                      "ocr_confidence": 0.9982315897941589,
+                      "word_labels": [],
+                      "ground_truth_text": "the",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "ship-like",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.18428571428571427,
+                          "y": 0.9618320610687023
+                        },
+                        "bottom_right": {
+                          "x": 0.2571428571428571,
+                          "y": 0.9923664122137404
+                        }
+                      },
+                      "ocr_confidence": 0.9211569428443909,
+                      "word_labels": [],
+                      "ground_truth_text": "ship-like",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "island",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.26142857142857145,
+                          "y": 0.9599236641221374
+                        },
+                        "bottom_right": {
+                          "x": 0.31142857142857144,
+                          "y": 0.9847328244274809
+                        }
+                      },
+                      "ocr_confidence": 0.7270923852920532,
+                      "word_labels": [],
+                      "ground_truth_text": "island",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "of",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.3142857142857143,
+                          "y": 0.9599236641221374
+                        },
+                        "bottom_right": {
+                          "x": 0.33714285714285713,
+                          "y": 0.9847328244274809
+                        }
+                      },
+                      "ocr_confidence": 0.9388686418533325,
+                      "word_labels": [],
+                      "ground_truth_text": "of",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "S.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.3385714285714286,
+                          "y": 0.9599236641221374
+                        },
+                        "bottom_right": {
+                          "x": 0.35714285714285715,
+                          "y": 0.9847328244274809
+                        }
+                      },
+                      "ocr_confidence": 0.7187183499336243,
+                      "word_labels": [],
+                      "ground_truth_text": "S.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "Bartolommeo.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.36142857142857143,
+                          "y": 0.9599236641221374
+                        },
+                        "bottom_right": {
+                          "x": 0.48142857142857143,
+                          "y": 0.9847328244274809
+                        }
+                      },
+                      "ocr_confidence": 0.5938632488250732,
+                      "word_labels": [],
+                      "ground_truth_text": "Bartolommeo.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "From",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.5,
+                          "y": 0.9599236641221374
+                        },
+                        "bottom_right": {
+                          "x": 0.5471428571428572,
+                          "y": 0.982824427480916
+                        }
+                      },
+                      "ocr_confidence": 0.561848521232605,
+                      "word_labels": [],
+                      "ground_truth_text": "From",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "an",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.5514285714285714,
+                          "y": 0.9637404580152672
+                        },
+                        "bottom_right": {
+                          "x": 0.5728571428571428,
+                          "y": 0.982824427480916
+                        }
+                      },
+                      "ocr_confidence": 0.9914746284484863,
+                      "word_labels": [],
+                      "ground_truth_text": "an",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "engravng",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.5771428571428572,
+                          "y": 0.9580152671755725
+                        },
+                        "bottom_right": {
+                          "x": 0.6628571428571428,
+                          "y": 0.9866412213740458
+                        }
+                      },
+                      "ocr_confidence": 0.5273962020874023,
+                      "word_labels": [],
+                      "ground_truth_text": "engraving",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-replace-word-replace",
+                        "match_score": 94
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "by",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.6671428571428571,
+                          "y": 0.9580152671755725
+                        },
+                        "bottom_right": {
+                          "x": 0.69,
+                          "y": 0.982824427480916
+                        }
+                      },
+                      "ocr_confidence": 0.6754275560379028,
+                      "word_labels": [],
+                      "ground_truth_text": "by",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "Piranesi.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.6942857142857143,
+                          "y": 0.9561068702290076
+                        },
+                        "bottom_right": {
+                          "x": 0.7657142857142857,
+                          "y": 0.9809160305343512
+                        }
+                      },
+                      "ocr_confidence": 0.5726353526115417,
+                      "word_labels": [],
+                      "ground_truth_text": "Piranesi.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "See",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.7842857142857143,
+                          "y": 0.9561068702290076
+                        },
+                        "bottom_right": {
+                          "x": 0.8142857142857143,
+                          "y": 0.9809160305343512
+                        }
+                      },
+                      "ocr_confidence": 0.9956381916999817,
+                      "word_labels": [],
+                      "ground_truth_text": "See",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "page",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.8185714285714286,
+                          "y": 0.9618320610687023
+                        },
+                        "bottom_right": {
+                          "x": 0.8585714285714285,
+                          "y": 0.9847328244274809
+                        }
+                      },
+                      "ocr_confidence": 0.8434863686561584,
+                      "word_labels": [],
+                      "ground_truth_text": "page",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "30.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.8642857142857143,
+                          "y": 0.9618320610687023
+                        },
+                        "bottom_right": {
+                          "x": 0.89,
+                          "y": 0.982824427480916
+                        }
+                      },
+                      "ocr_confidence": 0.9976019263267517,
+                      "word_labels": [],
+                      "ground_truth_text": "30.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": "On the ship-like island of S. Bartolommeo. From an engraving by Piranesi. See page 30."
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        }
+      ]
+    }
+  ]
+}

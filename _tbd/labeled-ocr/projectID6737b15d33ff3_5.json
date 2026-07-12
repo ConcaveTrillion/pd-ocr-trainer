@@ -1,0 +1,1124 @@
+{
+  "source_lib": "doctr-pgdp-labeled",
+  "source_path": "matched-ocr/projectID6737b15d33ff3_5.png",
+  "pages": [
+    {
+      "type": "Page",
+      "width": 1000,
+      "height": 1605,
+      "page_index": 0,
+      "bounding_box": {
+        "top_left": {
+          "x": 0.167,
+          "y": 0.35389408099688474
+        },
+        "bottom_right": {
+          "x": 0.835,
+          "y": 0.6467289719626168
+        }
+      },
+      "items": [
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.358,
+              "y": 0.35389408099688474
+            },
+            "bottom_right": {
+              "x": 0.65,
+              "y": 0.36822429906542054
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.358,
+                  "y": 0.35389408099688474
+                },
+                "bottom_right": {
+                  "x": 0.65,
+                  "y": 0.36822429906542054
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.358,
+                      "y": 0.35389408099688474
+                    },
+                    "bottom_right": {
+                      "x": 0.65,
+                      "y": 0.36822429906542054
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "GRAHAMO",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.358,
+                          "y": 0.35389408099688474
+                        },
+                        "bottom_right": {
+                          "x": 0.511,
+                          "y": 0.367601246105919
+                        }
+                      },
+                      "ocr_confidence": 0.5427267551422119,
+                      "word_labels": [],
+                      "ground_truth_text": "GRAHAMO",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "WALLAS",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.529,
+                          "y": 0.3545171339563863
+                        },
+                        "bottom_right": {
+                          "x": 0.65,
+                          "y": 0.36822429906542054
+                        }
+                      },
+                      "ocr_confidence": 0.5909232497215271,
+                      "word_labels": [],
+                      "ground_truth_text": "WALLAS",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        },
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.328,
+              "y": 0.3850467289719626
+            },
+            "bottom_right": {
+              "x": 0.681,
+              "y": 0.3987538940809969
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.328,
+                  "y": 0.3850467289719626
+                },
+                "bottom_right": {
+                  "x": 0.681,
+                  "y": 0.3987538940809969
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.328,
+                      "y": 0.3850467289719626
+                    },
+                    "bottom_right": {
+                      "x": 0.681,
+                      "y": 0.3987538940809969
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "AUCTORUM",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.328,
+                          "y": 0.3850467289719626
+                        },
+                        "bottom_right": {
+                          "x": 0.496,
+                          "y": 0.3987538940809969
+                        }
+                      },
+                      "ocr_confidence": 0.7482653260231018,
+                      "word_labels": [],
+                      "ground_truth_text": "AUCTORUM",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "DOCTORUM",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.515,
+                          "y": 0.3850467289719626
+                        },
+                        "bottom_right": {
+                          "x": 0.681,
+                          "y": 0.3987538940809969
+                        }
+                      },
+                      "ocr_confidence": 0.9222564697265625,
+                      "word_labels": [],
+                      "ground_truth_text": "DOCTORUM",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        },
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.396,
+              "y": 0.4161993769470405
+            },
+            "bottom_right": {
+              "x": 0.607,
+              "y": 0.43489096573208724
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.396,
+                  "y": 0.4161993769470405
+                },
+                "bottom_right": {
+                  "x": 0.607,
+                  "y": 0.43489096573208724
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.396,
+                      "y": 0.4161993769470405
+                    },
+                    "bottom_right": {
+                      "x": 0.607,
+                      "y": 0.43489096573208724
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "VUCUNDISSIMO",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.396,
+                          "y": 0.4161993769470405
+                        },
+                        "bottom_right": {
+                          "x": 0.607,
+                          "y": 0.43489096573208724
+                        }
+                      },
+                      "ocr_confidence": 0.2711474895477295,
+                      "word_labels": [],
+                      "ground_truth_text": "JUCUNDISSIMO",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-replace-word-replace",
+                        "match_score": 92
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": "JUCUNDISSIMO"
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        },
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.278,
+              "y": 0.44672897196261685
+            },
+            "bottom_right": {
+              "x": 0.729,
+              "y": 0.4604361370716511
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.278,
+                  "y": 0.44672897196261685
+                },
+                "bottom_right": {
+                  "x": 0.729,
+                  "y": 0.4604361370716511
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.278,
+                      "y": 0.44672897196261685
+                    },
+                    "bottom_right": {
+                      "x": 0.729,
+                      "y": 0.4604361370716511
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "STUDIOSORUM",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.278,
+                          "y": 0.44672897196261685
+                        },
+                        "bottom_right": {
+                          "x": 0.482,
+                          "y": 0.45981308411214955
+                        }
+                      },
+                      "ocr_confidence": 0.5820267200469971,
+                      "word_labels": [],
+                      "ground_truth_text": "STUDIOSORUM",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "UNIVERSITATIS",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.503,
+                          "y": 0.44672897196261685
+                        },
+                        "bottom_right": {
+                          "x": 0.729,
+                          "y": 0.4604361370716511
+                        }
+                      },
+                      "ocr_confidence": 0.5648594498634338,
+                      "word_labels": [],
+                      "ground_truth_text": "UNIVERSITATIS",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        },
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.354,
+              "y": 0.47725856697819313
+            },
+            "bottom_right": {
+              "x": 0.653,
+              "y": 0.49096573208722744
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.354,
+                  "y": 0.47725856697819313
+                },
+                "bottom_right": {
+                  "x": 0.653,
+                  "y": 0.49096573208722744
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.354,
+                      "y": 0.47725856697819313
+                    },
+                    "bottom_right": {
+                      "x": 0.653,
+                      "y": 0.49096573208722744
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "AMICO",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.354,
+                          "y": 0.47725856697819313
+                        },
+                        "bottom_right": {
+                          "x": 0.453,
+                          "y": 0.49096573208722744
+                        }
+                      },
+                      "ocr_confidence": 0.6739122271537781,
+                      "word_labels": [],
+                      "ground_truth_text": "AMICO",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "FIDELISSIMO",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.472,
+                          "y": 0.47725856697819313
+                        },
+                        "bottom_right": {
+                          "x": 0.653,
+                          "y": 0.49096573208722744
+                        }
+                      },
+                      "ocr_confidence": 0.955693781375885,
+                      "word_labels": [],
+                      "ground_truth_text": "FIDELISSIMO",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        },
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.414,
+              "y": 0.508411214953271
+            },
+            "bottom_right": {
+              "x": 0.592,
+              "y": 0.5208722741433022
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.414,
+                  "y": 0.508411214953271
+                },
+                "bottom_right": {
+                  "x": 0.592,
+                  "y": 0.5208722741433022
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.414,
+                      "y": 0.508411214953271
+                    },
+                    "bottom_right": {
+                      "x": 0.592,
+                      "y": 0.5208722741433022
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "SAPIENTIAE",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.414,
+                          "y": 0.508411214953271
+                        },
+                        "bottom_right": {
+                          "x": 0.592,
+                          "y": 0.5208722741433022
+                        }
+                      },
+                      "ocr_confidence": 0.6693735122680664,
+                      "word_labels": [],
+                      "ground_truth_text": "SAPIENTIAE",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        },
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.311,
+              "y": 0.5383177570093458
+            },
+            "bottom_right": {
+              "x": 0.699,
+              "y": 0.5520249221183801
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.311,
+                  "y": 0.5383177570093458
+                },
+                "bottom_right": {
+                  "x": 0.699,
+                  "y": 0.5520249221183801
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.311,
+                      "y": 0.5383177570093458
+                    },
+                    "bottom_right": {
+                      "x": 0.699,
+                      "y": 0.5520249221183801
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "CULTORI",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.311,
+                          "y": 0.5383177570093458
+                        },
+                        "bottom_right": {
+                          "x": 0.438,
+                          "y": 0.5520249221183801
+                        }
+                      },
+                      "ocr_confidence": 0.9607886075973511,
+                      "word_labels": [],
+                      "ground_truth_text": "CULTORI",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "DILIGENTISSIMO",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.458,
+                          "y": 0.5383177570093458
+                        },
+                        "bottom_right": {
+                          "x": 0.699,
+                          "y": 0.5520249221183801
+                        }
+                      },
+                      "ocr_confidence": 0.417034775018692,
+                      "word_labels": [],
+                      "ground_truth_text": "DILIGENTISSIMO",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        },
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.421,
+              "y": 0.5719626168224299
+            },
+            "bottom_right": {
+              "x": 0.584,
+              "y": 0.5856697819314641
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.421,
+                  "y": 0.5719626168224299
+                },
+                "bottom_right": {
+                  "x": 0.584,
+                  "y": 0.5856697819314641
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.421,
+                      "y": 0.5719626168224299
+                    },
+                    "bottom_right": {
+                      "x": 0.584,
+                      "y": 0.5856697819314641
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "VERITATIS",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.421,
+                          "y": 0.5719626168224299
+                        },
+                        "bottom_right": {
+                          "x": 0.584,
+                          "y": 0.5856697819314641
+                        }
+                      },
+                      "ocr_confidence": 0.9486385583877563,
+                      "word_labels": [],
+                      "ground_truth_text": "VERITATIS",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        },
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.167,
+              "y": 0.6018691588785047
+            },
+            "bottom_right": {
+              "x": 0.835,
+              "y": 0.6174454828660436
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.167,
+                  "y": 0.6018691588785047
+                },
+                "bottom_right": {
+                  "x": 0.835,
+                  "y": 0.6174454828660436
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.167,
+                      "y": 0.6018691588785047
+                    },
+                    "bottom_right": {
+                      "x": 0.835,
+                      "y": 0.6174454828660436
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "PERAUISITORI",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.167,
+                          "y": 0.6018691588785047
+                        },
+                        "bottom_right": {
+                          "x": 0.367,
+                          "y": 0.6174454828660436
+                        }
+                      },
+                      "ocr_confidence": 0.386804461479187,
+                      "word_labels": [],
+                      "ground_truth_text": "PERQUISITORI",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-replace-word-replace",
+                        "match_score": 92
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "ET",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.388,
+                          "y": 0.6031152647975078
+                        },
+                        "bottom_right": {
+                          "x": 0.428,
+                          "y": 0.6161993769470405
+                        }
+                      },
+                      "ocr_confidence": 0.8433154225349426,
+                      "word_labels": [],
+                      "ground_truth_text": "ET",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "INDAGATORI",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.449,
+                          "y": 0.6024922118380063
+                        },
+                        "bottom_right": {
+                          "x": 0.642,
+                          "y": 0.6161993769470405
+                        }
+                      },
+                      "ocr_confidence": 0.8102270364761353,
+                      "word_labels": [],
+                      "ground_truth_text": "INDAGATORI",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "AVIDISSIMO",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.662,
+                          "y": 0.6024922118380063
+                        },
+                        "bottom_right": {
+                          "x": 0.835,
+                          "y": 0.6161993769470405
+                        }
+                      },
+                      "ocr_confidence": 0.5660147666931152,
+                      "word_labels": [],
+                      "ground_truth_text": "AVIDISSIMO",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": "PERQUISITORI ET INDAGATORI AVIDISSIMO"
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        },
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.366,
+              "y": 0.6330218068535826
+            },
+            "bottom_right": {
+              "x": 0.639,
+              "y": 0.6467289719626168
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.366,
+                  "y": 0.6330218068535826
+                },
+                "bottom_right": {
+                  "x": 0.639,
+                  "y": 0.6467289719626168
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.366,
+                      "y": 0.6330218068535826
+                    },
+                    "bottom_right": {
+                      "x": 0.639,
+                      "y": 0.6467289719626168
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "DONO",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.366,
+                          "y": 0.6336448598130842
+                        },
+                        "bottom_right": {
+                          "x": 0.446,
+                          "y": 0.6467289719626168
+                        }
+                      },
+                      "ocr_confidence": 0.880332350730896,
+                      "word_labels": [],
+                      "ground_truth_text": "DONO",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "DO",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.466,
+                          "y": 0.6336448598130842
+                        },
+                        "bottom_right": {
+                          "x": 0.507,
+                          "y": 0.6467289719626168
+                        }
+                      },
+                      "ocr_confidence": 0.9749947190284729,
+                      "word_labels": [],
+                      "ground_truth_text": "DO",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "DEDICO",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.526,
+                          "y": 0.6330218068535826
+                        },
+                        "bottom_right": {
+                          "x": 0.639,
+                          "y": 0.6467289719626168
+                        }
+                      },
+                      "ocr_confidence": 0.9914606809616089,
+                      "word_labels": [],
+                      "ground_truth_text": "DEDICO",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        }
+      ]
+    }
+  ]
+}

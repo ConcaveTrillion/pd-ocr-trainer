@@ -1,0 +1,156 @@
+{
+  "source_lib": "doctr-pgdp-labeled",
+  "source_path": "matched-ocr/projectID629292e7559a8_48.png",
+  "pages": [
+    {
+      "type": "Page",
+      "width": 1250,
+      "height": 1961,
+      "page_index": 0,
+      "bounding_box": {
+        "top_left": {
+          "x": 0.3284125,
+          "y": 0.87109375
+        },
+        "bottom_right": {
+          "x": 0.57506953125,
+          "y": 0.8876953125
+        }
+      },
+      "items": [
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.3284125,
+              "y": 0.87109375
+            },
+            "bottom_right": {
+              "x": 0.57506953125,
+              "y": 0.8876953125
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.3284125,
+                  "y": 0.87109375
+                },
+                "bottom_right": {
+                  "x": 0.57506953125,
+                  "y": 0.8876953125
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.3284125,
+                      "y": 0.87109375
+                    },
+                    "bottom_right": {
+                      "x": 0.57506953125,
+                      "y": 0.8876953125
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "A",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.3284125,
+                          "y": 0.87109375
+                        },
+                        "bottom_right": {
+                          "x": 0.36364921875,
+                          "y": 0.8876953125
+                        }
+                      },
+                      "ocr_confidence": 0.5342150926589966,
+                      "word_labels": [],
+                      "ground_truth_text": "A",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "POLITICAL",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.35139296875000003,
+                          "y": 0.8720703125
+                        },
+                        "bottom_right": {
+                          "x": 0.46169921875,
+                          "y": 0.88671875
+                        }
+                      },
+                      "ocr_confidence": 0.5720809698104858,
+                      "word_labels": [],
+                      "ground_truth_text": "POLITICAL",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "DISCUSSION",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.46169921875,
+                          "y": 0.8740234375
+                        },
+                        "bottom_right": {
+                          "x": 0.57506953125,
+                          "y": 0.8857421875
+                        }
+                      },
+                      "ocr_confidence": 0.7338411211967468,
+                      "word_labels": [],
+                      "ground_truth_text": "DISCUSSION",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,156 @@
+{
+  "source_lib": "doctr-pgdp-labeled",
+  "source_path": "matched-ocr/projectID629292e7559a8_22.png",
+  "pages": [
+    {
+      "type": "Page",
+      "width": 1250,
+      "height": 1961,
+      "page_index": 0,
+      "bounding_box": {
+        "top_left": {
+          "x": 0.395821875,
+          "y": 0.771484375
+        },
+        "bottom_right": {
+          "x": 0.59651796875,
+          "y": 0.783203125
+        }
+      },
+      "items": [
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.395821875,
+              "y": 0.771484375
+            },
+            "bottom_right": {
+              "x": 0.59651796875,
+              "y": 0.783203125
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.395821875,
+                  "y": 0.771484375
+                },
+                "bottom_right": {
+                  "x": 0.59651796875,
+                  "y": 0.783203125
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.395821875,
+                      "y": 0.771484375
+                    },
+                    "bottom_right": {
+                      "x": 0.59651796875,
+                      "y": 0.783203125
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "SIR",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.395821875,
+                          "y": 0.771484375
+                        },
+                        "bottom_right": {
+                          "x": 0.432590625,
+                          "y": 0.783203125
+                        }
+                      },
+                      "ocr_confidence": 0.9983162879943848,
+                      "word_labels": [],
+                      "ground_truth_text": "SIR",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "HENRY",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.4356546875,
+                          "y": 0.771484375
+                        },
+                        "bottom_right": {
+                          "x": 0.50766015625,
+                          "y": 0.783203125
+                        }
+                      },
+                      "ocr_confidence": 0.986375629901886,
+                      "word_labels": [],
+                      "ground_truth_text": "HENRY",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "CLINTON",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.5091921875,
+                          "y": 0.771484375
+                        },
+                        "bottom_right": {
+                          "x": 0.59651796875,
+                          "y": 0.7822265625
+                        }
+                      },
+                      "ocr_confidence": 0.9255992770195007,
+                      "word_labels": [],
+                      "ground_truth_text": "CLINTON",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": ""
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        }
+      ]
+    }
+  ]
+}

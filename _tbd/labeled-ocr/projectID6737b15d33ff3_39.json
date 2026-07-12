@@ -1,0 +1,332 @@
+{
+  "source_lib": "doctr-pgdp-labeled",
+  "source_path": "matched-ocr/projectID6737b15d33ff3_39.png",
+  "pages": [
+    {
+      "type": "Page",
+      "width": 700,
+      "height": 353,
+      "page_index": 0,
+      "bounding_box": {
+        "top_left": {
+          "x": 0.12428571428571429,
+          "y": 0.8696883852691218
+        },
+        "bottom_right": {
+          "x": 0.8714285714285714,
+          "y": 0.9886685552407932
+        }
+      },
+      "items": [
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.12428571428571429,
+              "y": 0.9490084985835694
+            },
+            "bottom_right": {
+              "x": 0.8714285714285714,
+              "y": 0.9886685552407932
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.12428571428571429,
+                  "y": 0.9490084985835694
+                },
+                "bottom_right": {
+                  "x": 0.8714285714285714,
+                  "y": 0.9886685552407932
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.12428571428571429,
+                      "y": 0.9490084985835694
+                    },
+                    "bottom_right": {
+                      "x": 0.8714285714285714,
+                      "y": 0.9886685552407932
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "F1G.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.12428571428571429,
+                          "y": 0.9490084985835694
+                        },
+                        "bottom_right": {
+                          "x": 0.15714285714285714,
+                          "y": 0.9801699716713881
+                        }
+                      },
+                      "ocr_confidence": 0.7926344275474548,
+                      "word_labels": [],
+                      "ground_truth_text": "FIG.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-replace-word-replace",
+                        "match_score": 75
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "6.—FROM",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.16428571428571428,
+                          "y": 0.9490084985835694
+                        },
+                        "bottom_right": {
+                          "x": 0.25285714285714284,
+                          "y": 0.9830028328611898
+                        }
+                      },
+                      "ocr_confidence": 0.9661889672279358,
+                      "word_labels": [],
+                      "ground_truth_text": "6.—FROM",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "THE",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.25857142857142856,
+                          "y": 0.9490084985835694
+                        },
+                        "bottom_right": {
+                          "x": 0.30142857142857143,
+                          "y": 0.9830028328611898
+                        }
+                      },
+                      "ocr_confidence": 0.5767691135406494,
+                      "word_labels": [],
+                      "ground_truth_text": "THE",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "ALTAR",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.30714285714285716,
+                          "y": 0.9490084985835694
+                        },
+                        "bottom_right": {
+                          "x": 0.3742857142857143,
+                          "y": 0.9830028328611898
+                        }
+                      },
+                      "ocr_confidence": 0.5822796821594238,
+                      "word_labels": [],
+                      "ground_truth_text": "ALTAR",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "OF",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.38,
+                          "y": 0.9490084985835694
+                        },
+                        "bottom_right": {
+                          "x": 0.4085714285714286,
+                          "y": 0.9830028328611898
+                        }
+                      },
+                      "ocr_confidence": 0.9924114942550659,
+                      "word_labels": [],
+                      "ground_truth_text": "OF",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "DOMITHUS",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.4142857142857143,
+                          "y": 0.9490084985835694
+                        },
+                        "bottom_right": {
+                          "x": 0.5114285714285715,
+                          "y": 0.9830028328611898
+                        }
+                      },
+                      "ocr_confidence": 0.6870508790016174,
+                      "word_labels": [],
+                      "ground_truth_text": "DOMITIUS",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-replace-word-replace",
+                        "match_score": 88
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "AEIENOBAEBUS",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.52,
+                          "y": 0.9490084985835694
+                        },
+                        "bottom_right": {
+                          "x": 0.6628571428571428,
+                          "y": 0.9830028328611898
+                        }
+                      },
+                      "ocr_confidence": 0.4822107255458832,
+                      "word_labels": [],
+                      "ground_truth_text": "AHENOBARBUS",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-replace-word-replace",
+                        "match_score": 78
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "LOUVRE).",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.67,
+                          "y": 0.9490084985835694
+                        },
+                        "bottom_right": {
+                          "x": 0.7671428571428571,
+                          "y": 0.9858356940509915
+                        }
+                      },
+                      "ocr_confidence": 0.9436347484588623,
+                      "word_labels": [],
+                      "ground_truth_text": "(LOUVRE).",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-replace-word-replace",
+                        "match_score": 94
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "See",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.7828571428571428,
+                          "y": 0.9490084985835694
+                        },
+                        "bottom_right": {
+                          "x": 0.8114285714285714,
+                          "y": 0.9830028328611898
+                        }
+                      },
+                      "ocr_confidence": 0.9811760783195496,
+                      "word_labels": [],
+                      "ground_truth_text": "See",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "page",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.8142857142857143,
+                          "y": 0.9546742209631728
+                        },
+                        "bottom_right": {
+                          "x": 0.8528571428571429,
+                          "y": 0.9886685552407932
+                        }
+                      },
+                      "ocr_confidence": 0.935431182384491,
+                      "word_labels": [],
+                      "ground_truth_text": "page",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "3.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.8571428571428571,
+                          "y": 0.9575070821529745
+                        },
+                        "bottom_right": {
+                          "x": 0.8714285714285714,
+                          "y": 0.9858356940509915
+                        }
+                      },
+                      "ocr_confidence": 0.9128558039665222,
+                      "word_labels": [],
+                      "ground_truth_text": "3.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": "Fig. 6.—FROM THE ALTAR OF DOMITIUS AHENOBARBUS (LOUVRE). See page 3."
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        }
+      ]
+    }
+  ]
+}

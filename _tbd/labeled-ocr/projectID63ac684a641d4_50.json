@@ -1,0 +1,244 @@
+{
+  "source_lib": "doctr-pgdp-labeled",
+  "source_path": "matched-ocr/projectID63ac684a641d4_50.png",
+  "pages": [
+    {
+      "type": "Page",
+      "width": 1629,
+      "height": 1068,
+      "page_index": 0,
+      "bounding_box": {
+        "top_left": {
+          "x": 0.48066298342541436,
+          "y": 0.9157303370786517
+        },
+        "bottom_right": {
+          "x": 0.9367710251688153,
+          "y": 0.947565543071161
+        }
+      },
+      "items": [
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.48066298342541436,
+              "y": 0.9157303370786517
+            },
+            "bottom_right": {
+              "x": 0.9367710251688153,
+              "y": 0.947565543071161
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.48066298342541436,
+                  "y": 0.9157303370786517
+                },
+                "bottom_right": {
+                  "x": 0.5267034990791897,
+                  "y": 0.9353932584269663
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.48066298342541436,
+                      "y": 0.9157303370786517
+                    },
+                    "bottom_right": {
+                      "x": 0.5267034990791897,
+                      "y": 0.9353932584269663
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "Coroncl.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.48066298342541436,
+                          "y": 0.9157303370786517
+                        },
+                        "bottom_right": {
+                          "x": 0.5267034990791897,
+                          "y": 0.9353932584269663
+                        }
+                      },
+                      "ocr_confidence": 0.893128514289856,
+                      "word_labels": [],
+                      "ground_truth_text": "Coronel.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-replace-word-replace",
+                        "match_score": 88
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": "Coronel."
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            },
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.8520564763658687,
+                  "y": 0.9288389513108615
+                },
+                "bottom_right": {
+                  "x": 0.9367710251688153,
+                  "y": 0.947565543071161
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.8520564763658687,
+                      "y": 0.9288389513108615
+                    },
+                    "bottom_right": {
+                      "x": 0.9367710251688153,
+                      "y": 0.947565543071161
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "(TOf",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.8520564763658687,
+                          "y": 0.9288389513108615
+                        },
+                        "bottom_right": {
+                          "x": 0.8704726826273788,
+                          "y": 0.947565543071161
+                        }
+                      },
+                      "ocr_confidence": null,
+                      "word_labels": [],
+                      "ground_truth_text": "[To",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-replace-word-replace",
+                        "match_score": 29
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "ftace",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.8729281767955801,
+                          "y": 0.9288389513108615
+                        },
+                        "bottom_right": {
+                          "x": 0.8931860036832413,
+                          "y": 0.9447565543071161
+                        }
+                      },
+                      "ocr_confidence": null,
+                      "word_labels": [],
+                      "ground_truth_text": "face",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-replace-word-replace",
+                        "match_score": 89
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "page",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.8950276243093923,
+                          "y": 0.9325842696629213
+                        },
+                        "bottom_right": {
+                          "x": 0.9195825659914058,
+                          "y": 0.947565543071161
+                        }
+                      },
+                      "ocr_confidence": null,
+                      "word_labels": [],
+                      "ground_truth_text": "page",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "sa.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.9220380601596071,
+                          "y": 0.9297752808988764
+                        },
+                        "bottom_right": {
+                          "x": 0.9367710251688153,
+                          "y": 0.9438202247191011
+                        }
+                      },
+                      "ocr_confidence": null,
+                      "word_labels": [],
+                      "ground_truth_text": "33.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-replace-word-replace",
+                        "match_score": 33
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": "[To face page 33."
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        }
+      ]
+    }
+  ]
+}

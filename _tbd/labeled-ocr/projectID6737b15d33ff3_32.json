@@ -1,0 +1,310 @@
+{
+  "source_lib": "doctr-pgdp-labeled",
+  "source_path": "matched-ocr/projectID6737b15d33ff3_32.png",
+  "pages": [
+    {
+      "type": "Page",
+      "width": 700,
+      "height": 623,
+      "page_index": 0,
+      "bounding_box": {
+        "top_left": {
+          "x": 0.2257142857142857,
+          "y": 0.9213483146067416
+        },
+        "bottom_right": {
+          "x": 0.7742857142857142,
+          "y": 0.9871589085072231
+        }
+      },
+      "items": [
+        {
+          "type": "Block",
+          "child_type": "BLOCKS",
+          "block_category": "BLOCK",
+          "block_labels": null,
+          "bounding_box": {
+            "top_left": {
+              "x": 0.2257142857142857,
+              "y": 0.9213483146067416
+            },
+            "bottom_right": {
+              "x": 0.7742857142857142,
+              "y": 0.9871589085072231
+            }
+          },
+          "items": [
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.2257142857142857,
+                  "y": 0.9213483146067416
+                },
+                "bottom_right": {
+                  "x": 0.7742857142857142,
+                  "y": 0.9518459069020867
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.2257142857142857,
+                      "y": 0.9213483146067416
+                    },
+                    "bottom_right": {
+                      "x": 0.7742857142857142,
+                      "y": 0.9518459069020867
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "F1G.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.2257142857142857,
+                          "y": 0.9229534510433387
+                        },
+                        "bottom_right": {
+                          "x": 0.2742857142857143,
+                          "y": 0.9486356340288925
+                        }
+                      },
+                      "ocr_confidence": null,
+                      "word_labels": [],
+                      "ground_truth_text": "FIG.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-replace-word-replace",
+                        "match_score": 75
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "4——HEAD",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.2842857142857143,
+                          "y": 0.9213483146067416
+                        },
+                        "bottom_right": {
+                          "x": 0.4157142857142857,
+                          "y": 0.9518459069020867
+                        }
+                      },
+                      "ocr_confidence": null,
+                      "word_labels": [],
+                      "ground_truth_text": "4.—HEAD",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-replace-word-replace",
+                        "match_score": 86
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "OF",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.43,
+                          "y": 0.9213483146067416
+                        },
+                        "bottom_right": {
+                          "x": 0.4714285714285714,
+                          "y": 0.9470304975922953
+                        }
+                      },
+                      "ocr_confidence": 0.9998612403869629,
+                      "word_labels": [],
+                      "ground_truth_text": "OF",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "PARTHENON",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.4857142857142857,
+                          "y": 0.9213483146067416
+                        },
+                        "bottom_right": {
+                          "x": 0.6642857142857143,
+                          "y": 0.9486356340288925
+                        }
+                      },
+                      "ocr_confidence": 0.6889561414718628,
+                      "word_labels": [],
+                      "ground_truth_text": "PARTHENON",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "STEED",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.6814285714285714,
+                          "y": 0.9213483146067416
+                        },
+                        "bottom_right": {
+                          "x": 0.7742857142857142,
+                          "y": 0.9486356340288925
+                        }
+                      },
+                      "ocr_confidence": 0.7177420258522034,
+                      "word_labels": [],
+                      "ground_truth_text": "STEED",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": "Fig. 4.—HEAD OF PARTHENON STEED"
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            },
+            {
+              "type": "Block",
+              "child_type": "BLOCKS",
+              "block_category": "PARAGRAPH",
+              "block_labels": null,
+              "bounding_box": {
+                "top_left": {
+                  "x": 0.4357142857142857,
+                  "y": 0.956661316211878
+                },
+                "bottom_right": {
+                  "x": 0.5614285714285714,
+                  "y": 0.9871589085072231
+                }
+              },
+              "items": [
+                {
+                  "type": "Block",
+                  "child_type": "WORDS",
+                  "block_category": "LINE",
+                  "block_labels": null,
+                  "bounding_box": {
+                    "top_left": {
+                      "x": 0.4357142857142857,
+                      "y": 0.956661316211878
+                    },
+                    "bottom_right": {
+                      "x": 0.5614285714285714,
+                      "y": 0.9871589085072231
+                    }
+                  },
+                  "items": [
+                    {
+                      "type": "Word",
+                      "text": "Sce",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.4357142857142857,
+                          "y": 0.956661316211878
+                        },
+                        "bottom_right": {
+                          "x": 0.4742857142857143,
+                          "y": 0.9807383627608347
+                        }
+                      },
+                      "ocr_confidence": 0.8826144933700562,
+                      "word_labels": [],
+                      "ground_truth_text": "See",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "difflib-line-replace-word-replace",
+                        "match_score": 67
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "page",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.48142857142857143,
+                          "y": 0.9630818619582665
+                        },
+                        "bottom_right": {
+                          "x": 0.5342857142857143,
+                          "y": 0.9871589085072231
+                        }
+                      },
+                      "ocr_confidence": 0.9493638873100281,
+                      "word_labels": [],
+                      "ground_truth_text": "page",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    },
+                    {
+                      "type": "Word",
+                      "text": "3.",
+                      "bounding_box": {
+                        "top_left": {
+                          "x": 0.5428571428571428,
+                          "y": 0.9630818619582665
+                        },
+                        "bottom_right": {
+                          "x": 0.5614285714285714,
+                          "y": 0.9839486356340289
+                        }
+                      },
+                      "ocr_confidence": 0.8199374675750732,
+                      "word_labels": [],
+                      "ground_truth_text": "3.",
+                      "ground_truth_bounding_box": null,
+                      "ground_truth_match_keys": {
+                        "match_type": "word-exactly-equal",
+                        "match_score": 100
+                      }
+                    }
+                  ],
+                  "override_page_sort_order": null,
+                  "unmatched_ground_truth_words": [],
+                  "additional_block_attributes": {},
+                  "base_ground_truth_text": "See page 3."
+                }
+              ],
+              "override_page_sort_order": null,
+              "unmatched_ground_truth_words": [],
+              "additional_block_attributes": {},
+              "base_ground_truth_text": ""
+            }
+          ],
+          "override_page_sort_order": null,
+          "unmatched_ground_truth_words": [],
+          "additional_block_attributes": {},
+          "base_ground_truth_text": ""
+        }
+      ]
+    }
+  ]
+}
