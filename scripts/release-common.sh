@@ -4,7 +4,7 @@
 # Repo-local scripts/do-release.sh files configure these variables, then call
 # pd_release_main:
 #   RELEASE_REPO              owner/repo, used only for final release URL text
-#   RELEASE_BRANCH            release branch, defaults to main
+#   RELEASE_BRANCH            release branch, defaults to master
 #   RELEASE_PREFLIGHT         command run before tagging, defaults to make ci-slow
 #   RELEASE_VERSION_SOURCE    tags or uv, defaults to tags
 #   RELEASE_VERSION_FILES     files committed for RELEASE_VERSION_SOURCE=uv

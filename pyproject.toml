@@ -28,7 +28,7 @@ dependencies = [
     "python-doctr>=0.11.1a0",
     "nicegui>=1.4.0",
     "matplotlib>=3.10.1",
-    "pd-book-tools",
+    "pdomain-book-tools",
 ]
 
 [project.optional-dependencies]
@@ -79,7 +79,7 @@ pd-ocr-trainer-detect = "pd_ocr_trainer.train_detect:main"
 pd-ocr-trainer-ui = "pd_ocr_trainer.ui:main"
 
 [tool.uv.sources]
-pd-book-tools = { git = "https://github.com/ConcaveTrillion/pd-book-tools.git" }
+pdomain-book-tools = { git = "https://github.com/ConcaveTrillion/pdomain-book-tools.git" }
 
 [tool.setuptools]
 package-dir = { "" = "src" }
