@@ -1,10 +1,21 @@
+---
+Status: draft
+Owner: CT
+Created: 2026-05-11
+Last verified: 2026-07-14
+Kind: spec
+Supersedes: N/A
+Promotes to: N/A
+Disposition: Parked until the metric and upstream annotation contracts are confirmed.
+---
+
 # Spec: glyph-annotation eval slicing
 
 **Status:** spec only, not implemented.
 **Owner repo:** `pd-ocr-trainer`.
 **Companion spec:** [`./glyph-feature-classifier.md`](./glyph-feature-classifier.md).
-**Cross-repo deps:** [`pd-book-tools`](../../../pd-book-tools/) defines
-the `GlyphAnnotations` data model; [`pd-ocr-synth`](../../../pd-ocr-synth/)
+**Cross-repo deps:** `pdomain-book-tools` defines
+the `GlyphAnnotations` data model; `pd-ocr-synth`
 emits annotated training/eval data with annotations as gold.
 
 ## Motivation
@@ -19,7 +30,7 @@ The trainer is a **read-only consumer** of annotations here. It does
 not produce annotations and does not train against them in this spec —
 that is [`./glyph-feature-classifier.md`](./glyph-feature-classifier.md).
 
-## Shared data model (recap from pd-book-tools)
+## Shared data model (recap from pdomain-book-tools)
 
 ```text
 GlyphAnnotations:
@@ -85,7 +96,7 @@ numbers but do not gate releases on them.
   detection eval (IoU-based) does not consume word text.
 - **Loader:** wherever the eval loader yields `(crop, gt_text)`, it
   must additionally yield `glyph_annotations` (None-able). The
-  pd-book-tools page-document loader is the right plumbing point — it
+  pdomain-book-tools page-document loader is the right plumbing point — it
   already carries the per-word object that will gain
   `glyph_annotations`.
 - **Metric aggregator:** add a per-feature accumulator alongside the
@@ -109,7 +120,7 @@ numbers but do not gate releases on them.
   feature — synth data carries gold annotations, so absence is real.
 - **Per-row `language` / `typeface` in HF datasets.** Slicing is
   orthogonal to the language/typeface split from
-  [`../ROADMAP.md`](../ROADMAP.md). Glyph-slice within an
+  [`roadmap.md`](../plans/roadmap.md). Glyph-slice within an
   already-filtered (lang, typeface) eval set, not across.
 
 ## Non-goals
@@ -126,3 +137,11 @@ numbers but do not gate releases on them.
 - Do we want a single summary "annotation-aware CER" (weighted average
   across feature buckets) or only per-feature numbers? Recommendation:
   per-feature only; a weighted scalar is too easy to misread.
+
+## Adversarial Review
+
+Stage: migration-time design review. Source: a read-only analyzer and direct comparison with recognition evaluation code, dataset batches, tests, upstream assumptions, and history.
+
+The review retained the rule that unknown annotations must never become negative examples. It changed the result by parking the design as a draft because the trainer reports DocTR exact and partial text matches, not the CER/WER accumulator assumed here, and recognition batches carry no annotation sidecar.
+
+No glyph-sliced metric, fixture, loader, UI table, or JSON sidecar has shipped. Residual risks are the choice between adding true CER/WER or slicing current metrics, the upstream annotation schema, and the absence of an annotated evaluation fixture.

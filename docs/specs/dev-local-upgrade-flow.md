@@ -1,16 +1,27 @@
+---
+Status: draft
+Owner: CT
+Created: 2026-05-11
+Last verified: 2026-07-14
+Kind: spec
+Supersedes: N/A
+Promotes to: N/A
+Disposition: Parked until the CUDA environment restoration contract is chosen.
+---
+
 # Spec: dev-local-aware `upgrade-deps`
 
 **Status:** spec only, not implemented.
 **Owner repo:** `pd-ocr-trainer`.
 **Workspace-wide:** sibling spec must land in every pd-* repo; the
-detection contract is anchored in `pd-book-tools` and reused here.
+detection contract is anchored in `pdomain-book-tools` and reused here.
 
 ## Motivation
 
 `make upgrade-deps` ends with `uv sync --group all-dev`, which resolves
 the venv strictly against `pyproject.toml` + `uv.lock`. In **dev-local
 mode** — `make dev-local` has installed editable sibling checkouts of
-`pd-book-tools` and (per `dev-env-setup.sh`) a sibling `doctr` clone,
+`pdomain-book-tools` and (per `dev-env-setup.sh`) a sibling `doctr` clone,
 plus, on this repo, an operator-installed CUDA-built `torch` /
 `torchvision` / `torchaudio` wheel — that final `uv sync` silently
 reverts every one of those to the canonical published version (and to
@@ -29,9 +40,9 @@ applies to `pd-ocr-trainer`.
    must branch on the detected mode. Canonical mode is unchanged from
    today; dev-local mode refuses-with-message by default.
 2. **Detection cascade** (in order):
-   1. Probe `uv pip show pd-book-tools` for an
+   1. Probe `uv pip show pdomain-book-tools` for an
       `Editable project location:` line. This is the cross-repo
-      contract anchor — `pd-book-tools` is dev-local mode's required
+      contract anchor — `pdomain-book-tools` is dev-local mode's required
       sibling, so its editable status is the canonical signal.
    2. Fallback: a marker file `.venv/.pd-dev-local` written by
       `make dev-local` on success.
@@ -41,12 +52,12 @@ applies to `pd-ocr-trainer`.
 3. **UX.**
    - Default `make upgrade-deps` in dev-local mode: **refuse and print
      a message** explaining that `uv sync` would revert the editable
-     `pd-book-tools` (and editable `doctr` if present) and the
+     `pdomain-book-tools` (and editable `doctr` if present) and the
      CUDA-built torch wheels, and pointing the operator at
      `make upgrade-deps-local`.
    - New `make upgrade-deps-local` recipe: `uv lock --upgrade`, then
      `uv sync --group all-dev`, then **re-apply the dev-local layer**:
-     re-install `-e ../pd-book-tools`, re-install `-e` doctr if present
+     re-install `-e ../pdomain-book-tools`, re-install `-e` doctr if present
      at `../doctr` or `../doctr_package`, and **re-install the
      CUDA-built torch / torchvision / torchaudio wheels** the operator
      has on file (from a documented pinned source — see "GPU-extras
@@ -78,7 +89,7 @@ index**. Practically, this means:
   `mindee/doctr` from git (`pip install -e .[torch]`); `pyproject.toml`
   pins canonical `python-doctr>=0.11.1a0`. So the dev-local layer for
   this repo is **three** editable/operator-applied artifacts that
-  `uv sync` reverts: pd-book-tools, doctr, and CUDA torch wheels.
+  `uv sync` reverts: pdomain-book-tools, doctr, and CUDA torch wheels.
 
 The implementation pass needs to decide how `upgrade-deps-local` discovers
 "which CUDA build does this venv want." Options to evaluate:
@@ -101,17 +112,17 @@ flags that the restoration mechanism does not exist yet in this repo.
 ## Test plan
 
 - Canonical mode: `make upgrade-deps` in a venv where
-  `uv pip show pd-book-tools` shows a registry install — proceeds as
+  `uv pip show pdomain-book-tools` shows a registry install — proceeds as
   today.
 - Dev-local mode: `make dev-local && make upgrade-deps` — refuses with
   the documented message, exits non-zero, leaves the venv untouched.
 - Dev-local mode: `make dev-local && make upgrade-deps-local` —
-  upgrades the lock, re-applies editable pd-book-tools (and doctr if
+  upgrades the lock, re-applies editable pdomain-book-tools (and doctr if
   the sibling clone is present), re-applies CUDA torch wheels, and
   passes `make check-local-editable`.
 - Override: `PD_DEV_LOCAL=1 make upgrade-deps` in a venv with a
-  registry-installed `pd-book-tools` — refuses (env var wins).
-- Marker fallback: delete `pd-book-tools` editable install but keep
+  registry-installed `pdomain-book-tools` — refuses (env var wins).
+- Marker fallback: delete `pdomain-book-tools` editable install but keep
   `.venv/.pd-dev-local` — refuses (marker still trips the cascade).
 
 ## Out of scope
@@ -120,3 +131,11 @@ flags that the restoration mechanism does not exist yet in this repo.
 - Migrating `dev-env-setup.sh` / `install-training-dependencies.sh`
   off `pip install -e .[torch]` for doctr — separate cleanup.
 - Any change to canonical-mode `upgrade-deps` semantics.
+
+## Adversarial Review
+
+Stage: migration-time design review. Source: a read-only analyzer and direct comparison with the Makefile, setup scripts, dependency configuration, tests, and history.
+
+The review accepted the risk that `uv sync` can replace editable or operator-selected dependencies. It changed the result by parking this spec as a draft: the proposed refusal path remains useful, but the document leaves CUDA restoration out of scope even though restoration is required for a complete workflow.
+
+Current practice has `dev-local` and `check-local-editable`, but no `upgrade-deps-local`, mode marker, CUDA-state record, or restoration test. Residual risks are an unverified assumption about current PyTorch wheel selection and the unresolved choice between recorded GPU state, declarative extras, or deliberate exclusion.

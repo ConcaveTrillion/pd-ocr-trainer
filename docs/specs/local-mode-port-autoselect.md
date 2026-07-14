@@ -1,3 +1,14 @@
+---
+Status: active
+Owner: CT
+Created: 2026-05-11
+Last verified: 2026-07-14
+Kind: spec
+Supersedes: N/A
+Promotes to: N/A
+Disposition: Active unimplemented milestone t2 design.
+---
+
 # Spec: local-mode port auto-select + stable bookmarks + in-UI URL display
 
 **Status:** spec only, not implemented.
@@ -89,3 +100,11 @@ Tests required (all local-mode):
 - Browser-side bookmark rewriting; the bookmark stability story is
   "the URL stays put across restarts," not "we update existing
   bookmarks."
+
+## Adversarial Review
+
+Stage: migration-time design review. Source: a read-only analyzer and direct comparison with NiceGUI startup code, browser fixtures, tests, sibling evidence recorded in this design, and history.
+
+The review retained collision fallback, stable local bookmarks, explicit-port fail-fast behavior, and in-UI URL display as active intent. It clarified that the existing environment-variable port contract must be covered alongside any future command-line flag.
+
+The application still passes one fixed configured port to NiceGUI, while browser tests reserve an ephemeral test port outside application logic. Residual risks are the definition of local mode and how the application obtains the actual kernel-selected port before it persists or displays that URL.

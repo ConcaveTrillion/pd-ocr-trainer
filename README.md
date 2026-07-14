@@ -1,119 +1,60 @@
-# pd-book-tools
+---
+Status: active
+Owner: CT
+Created: 2026-05-11
+Last verified: 2026-07-14
+Kind: usage
+---
 
-Python tools for training DocTR OCR models on PGDP Data
+# pd-ocr-trainer
 
-## Installation
+`pd-ocr-trainer` trains DocTR detection and recognition models from PGDP data through a NiceGUI application. It also manages local dataset profiles, validation data, model exports, and model metadata.
 
-Install the 'uv' tooling to manage project dependencies:
+## Setup
 
-[uv installation guide](https://docs.astral.sh/uv/getting-started/installation/)
-
-I used: `pipx install uv` (you will need `pipx` to do this). Upgrade
-with `pipx upgrade uv`.
-
-Then run `uv venv` to create a venv.
-
-Deactivate any current venv (`deactivate`), then activate the venv with
-`source .venv/bin/activate`.
-
-Install dependencies.
+Install the repository-declared dependencies and hooks:
 
 ```bash
-uv sync
+make setup
 ```
 
-Check pre-commit
+Run the application:
 
 ```bash
-pre-commit
+make run
 ```
 
-To get the model files, you need to use git lfs.
-
-[Git LFS installation guide](https://docs.github.com/en/repositories/working-with-files/managing-large-files/installing-git-large-file-storage)
-
-## Usage
-
-`voila data-labeler.ipynb` will run the labeling notebook web server
-
-### Dataset Layout By Group/Profile
-
-Training and validation datasets are now organized by profile (group), for example:
-
-- `ml-training/base-ocr/detection`
-- `ml-training/base-ocr/recognition`
-- `ml-validation/base-ocr/detection`
-- `ml-validation/base-ocr/recognition`
-
-Additional export groups from the labeler (for example `italics`,
-`small-caps`) are saved in their own profile folders under both split
-roots.
-
-Legacy datasets that used the old layout (`ml-training/detection`,
-`ml-validation/recognition`, etc.) are automatically migrated to
-`base-ocr`.
-
-### `model-trainer.ipynb`
-
-To use the trainer, you have to pull down the doctr git repo because the
-scripts are not in the PyPI doctr toolset.
-
-Install it in the PARENT directory of this repo (`../doctr`)
-
-e.g.
+Run the full verification gate before committing:
 
 ```bash
-cd ..
-gh repo clone mindee/doctr
+make ci
 ```
 
-or
+Git LFS is required for `.pt` and `.bin` model artifacts. See the [Git LFS installation guide](https://docs.github.com/en/repositories/working-with-files/managing-large-files/installing-git-large-file-storage).
 
-```bash
-cd ..
-git clone https://github.com/mindee/doctr.git doctr
+## Dataset layout
+
+Training and validation data is grouped by profile:
+
+```text
+ml-training/<profile>/detection
+ml-training/<profile>/recognition
+ml-validation/<profile>/detection
+ml-validation/<profile>/recognition
 ```
 
-You need to modify one file in this repo to add logic to allow use of custom
-vocabulary.
+The application migrates the former ungrouped detection and recognition directories, and the legacy `base-ocr` profile, into the canonical `all` profile. Additional labeler exports can use separate profile directories.
 
-In file: doctr/references/recognition/train_pytorch.py
+## Current and planned documentation
 
-Where you find
+- [`docs/README.md`](docs/README.md) explains the documentation layout and links current entry points.
+- [`docs/plans/roadmap.md`](docs/plans/roadmap.md) is the approved, unimplemented Hugging Face dataset roadmap.
+- [`docs/specs/datasets.md`](docs/specs/datasets.md) defines the target dataset contract; it is not shipped architecture.
+- [`docs/context/current-state.md`](docs/context/current-state.md) records the current operational state.
+- [`AGENTS.md`](AGENTS.md), [`CLAUDE.md`](CLAUDE.md), [`CONVENTIONS.md`](CONVENTIONS.md), and [`DOCGRAPH.md`](DOCGRAPH.md) contain contributor and agent guidance.
 
-```python
-    vocab = VOCABS[args.vocab]
-```
-
-Change this to
-
-```python
-    if args.vocab.startswith("CUSTOM:"):
-        # Custom vocab
-        custom_vocab = args.vocab.split(":", 1)[1]
-        if not custom_vocab:
-            raise ValueError("Custom vocab cannot be empty")
-        vocab = "".join(sorted(set([char for char in custom_vocab])))
-    else:
-        vocab = VOCABS[args.vocab]
-```
-
-Once you've done this, you can run the model training notebook.
-
-## Roadmap
-
-The Hugging Face datasets integration design — milestones, repo
-naming, typeface enum, model-metadata sidecar — lives in
-[`docs/ROADMAP.md`](docs/ROADMAP.md). The dataset shape and format
-spec it builds on is [`docs/DATASETS.md`](docs/DATASETS.md).
-
-Other near-term work:
-
-- **Mac / Apple Silicon (MPS) support** — test and validate model training and
-  inference on Apple Silicon via PyTorch MPS backend; the doctr training scripts
-  currently target CUDA, MPS compatibility needs investigation (some ops may fall
-  back to CPU)
+The old notebook and a patched sibling DocTR checkout are not the current entry point. Use `make run` and the package-managed dependencies.
 
 ## License
 
-See LICENSE file.
+The package declares the Unlicense in `pyproject.toml`.

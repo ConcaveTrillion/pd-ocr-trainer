@@ -11,10 +11,10 @@ from pathlib import Path
 from queue import Empty, Queue
 
 from nicegui import ui
-from pd_book_tools.ocr.doctr_support import (
+from pdomain_book_tools.ocr.doctr_support import (
     DEFAULT_VOCAB_EXTRA_CHARS as _DEFAULT_VOCAB_EXTRA_CHARS,
 )
-from pd_book_tools.ocr.doctr_support import (
+from pdomain_book_tools.ocr.doctr_support import (
     DEFAULT_VOCAB_LIBRARY as _DEFAULT_VOCAB_LIBRARY,
 )
 

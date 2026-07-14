@@ -1,3 +1,11 @@
+---
+Status: active
+Owner: CT
+Created: 2026-05-28
+Last verified: 2026-07-14
+Kind: process
+---
+
 # Writing Style
 
 Use this style for docs, reports, issue text, PR text, and user-facing copy.

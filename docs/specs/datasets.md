@@ -1,7 +1,25 @@
-# Workspace dataset architecture — Hugging Face Datasets
+---
+Status: active
+Owner: CT
+Created: 2026-05-11
+Last verified: 2026-07-14
+Kind: spec
+Supersedes: N/A
+Promotes to: docs/architecture/datasets.md
+Disposition: Approved target contract; implementation has not started.
+---
+
+# Workspace dataset design — Hugging Face Datasets
+
+## Agent Index
+
+- **Kind:** spec
+- **Status:** active
+- **Read when:** designing Hugging Face dataset exchange, naming, card data, caching, or trainer dataset integration.
+- **Search terms:** Hugging Face datasets, dataset contract, card data, typeface, dataset publishing.
 
 **Status:** specification, not yet implemented.
-See [`./ROADMAP.md`](./ROADMAP.md) for the milestone-by-milestone
+See [`../plans/roadmap.md`](../plans/roadmap.md) for the milestone-by-milestone
 implementation plan.
 
 **Scope:** cross-project. Defines how `pd-ocr-labeler`, `pd-ocr-synth`,
@@ -30,12 +48,13 @@ ecosystem to datasets.
 
 | Project           | Produces                                                                                  | Consumes              |
 |-------------------|-------------------------------------------------------------------------------------------|-----------------------|
-| `pd-ocr-labeler`  | Real labeled OCR data (corrected by human) **and** typeface-classifier data (per-word style flags) | —                     |
-| `pd-ocr-synth`    | Synthetic OCR data (recipe-driven); can also emit typeface-classifier data (typeface known per font) | —                     |
-| `pd-ocr-trainer`  | Optional: eval splits, model-card datasets                                                | Any of the above (one or many) |
+| `pd-ocr-labeler`  | Real labeled OCR exports and typeface-classifier labels | — |
+| `pd-ocr-synth`    | Synthetic OCR exports and known typeface labels | — |
+| `pd-ocr-trainer`  | Versioned Hub datasets, eval splits, and curated mixes | Labeler and synth exports |
 
-Producers publish to HF dataset repos. The trainer reads from local
-disk *or* HF dataset repos, transparently.
+The trainer packages and publishes producer exports to Hub dataset repos.
+It reads from local disk or Hub dataset repos transparently. Producer
+repositories do not own Hub publishing in this design.
 
 ## Dataset shapes
 
@@ -249,10 +268,10 @@ runs are reproducible.
 
 ### Current state
 
-`dataset_store.py` (25KB) reads profiles from
-`<root>/ml-recognition/<profile>/recognition` and
-`<root>/ml-training/<profile>/detection`. Profiles are local
-directories, full stop.
+`dataset_store.py` reads profiles from
+`<root>/ml-training/<profile>/{detection,recognition}` and
+`<root>/ml-validation/<profile>/{detection,recognition}`. Profiles are
+local directories, full stop.
 
 ### Target state
 
@@ -295,8 +314,8 @@ the schema.
    metadata (so a `.pt` file traces back to its sources).
 
 Backward compatibility: a profile with no `sources:` field continues
-to read `<root>/ml-{recognition,training}/<profile>/...` exactly as
-today.
+to read `<root>/ml-training/<profile>/{detection,recognition}` and
+`<root>/ml-validation/<profile>/{detection,recognition}` exactly as today.
 
 ### Trainer "create" path (optional)
 
@@ -312,16 +331,17 @@ subcommand handles this. It uses `huggingface_hub.upload_large_folder`
 under the hood and stamps `pd-ocr-source: pd-ocr-trainer-eval` in
 `card_data`.
 
-## Synth and labeler — publishers
+## Trainer packaging of synth and labeler exports
 
-Both producers grow a `publish` subcommand with the same shape:
+The trainer grows one packaging command. The profile selects the source
+exports, the task selects the dataset shape, and `--to` names the Hub repo:
 
 ```bash
-pd-ocr-synth   publish gaelic       --repo ntw8532/pd-ocr-synth-ga-clogaelach
-pd-ocr-labeler publish project-foo  --repo ntw8532/pd-ocr-real-en-roman
+pd-ocr-trainer publish-dataset --profile gaelic --task recognition --to ntw8532/pd-ocr-synth-ga-clogaelach
+pd-ocr-trainer publish-dataset --profile project-foo --task detection --to ntw8532/pd-ocr-real-en-roman
 ```
 
-Both wrap `huggingface_hub`'s `HfApi.upload_large_folder`. Both stamp:
+The command wraps `huggingface_hub`'s `HfApi.upload_large_folder` and stamps:
 
 - `language` and `typeface` (required)
 - `pd-ocr-source` (which producer)
@@ -402,15 +422,16 @@ download (smaller sets, repeated reads).
 ## Migration plan (sequenced)
 
 The detailed milestone-by-milestone breakdown lives in
-[`./ROADMAP.md`](./ROADMAP.md). High-level sequence:
+[`roadmap.md`](../plans/roadmap.md). High-level sequence:
 
 1. **Spec landed** (this doc).
 2. **`pd-ocr-trainer` refactor** — `DatasetSource` abstraction,
    `LocalSource`, `HFDatasetSource`, profile-config schema with
    backward-compat.
-3. **`pd-ocr-synth publish`** — once `pd-ocr-synth` itself is
-   implemented, add the subcommand.
-4. **`pd-ocr-labeler publish`** — same shape, after labeler stabilizes.
+3. **Producer export metadata** — require synth and labeler exports to
+   carry the language, typeface, license, and provenance inputs the trainer needs.
+4. **`pd-ocr-trainer publish-dataset`** — package real, synthetic, and
+   classifier exports after producer formats stabilize.
 5. **`pd-ocr-trainer publish-eval`** — once a real eval split is
    curated.
 6. **Documentation** — workspace `README.md` references this doc;
@@ -430,9 +451,10 @@ Steps 2–4 are independent and can land in any order after step 1.
    scans are fine, but anything else needs review. Default to
    private; promote to public per dataset.
 3. **Mixed-typeface resolution.** The page-level / word-level tiering
-   rule above is the recommendation but needs explicit user sign-off.
-   It tightens the original spec — for italic/smallcaps, **only
-   recognition repos exist**.
+   rule above is the accepted repository contract. Italic and smallcaps
+   get no detection or recognition repos; they appear only in classifier
+   datasets while their crops may remain in a page-level recognizer's
+   training distribution.
 4. **HF LFS quotas** for `ntw8532` against synth dataset sizes
    (millions of crops, tens of GB).
 5. **License/attribution policy.** Per-row `license` (SPDX) in the
@@ -448,3 +470,11 @@ Steps 2–4 are independent and can land in any order after step 1.
 8. **Streaming vs local for training.** Streaming saves disk but slows
    the inner loop on small/medium datasets. Default: download for
    datasets under ~10GB, stream above. Trainer config can override.
+
+## Adversarial Review
+
+Stage: migration-time design review. Source: three read-only migration analyzers plus direct comparison with `src/pd_ocr_trainer/dataset_store.py`, training code, tests, and commit history.
+
+The review accepted that this document is target design, not shipped architecture. The migration moved it from `docs/architecture/` to `docs/specs/`, corrected moved links, and retained the existing local `ExportManager` and profile layout as current behavior. No `DatasetSource`, Hub publisher, card-data validator, or Hugging Face dataset loader exists yet.
+
+The main implementation deviation is that the repository kept its local detection/recognition data path after this design was approved. Residual risks are authentication and cache behavior, empirical italic/small-caps recognition coverage, and compatibility of the proposed schema with current upstream producers. Implementers must revalidate those points instead of treating them as shipped facts.

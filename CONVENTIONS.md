@@ -1,3 +1,11 @@
+---
+Status: active
+Owner: CT
+Created: 2026-05-28
+Last verified: 2026-07-14
+Kind: guidance
+---
+
 # Conventions — pd-ocr-trainer
 
 <!-- workspace-conventions:start -->

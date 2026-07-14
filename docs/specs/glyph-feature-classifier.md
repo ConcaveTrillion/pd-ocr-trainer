@@ -1,3 +1,14 @@
+---
+Status: active
+Owner: CT
+Created: 2026-05-11
+Last verified: 2026-07-14
+Kind: spec
+Supersedes: N/A
+Promotes to: N/A
+Disposition: Active unimplemented milestone g2 design.
+---
+
 # Spec: glyph-feature classifier
 
 **Status:** spec only, not implemented.
@@ -5,9 +16,9 @@
 **Companion spec:** [`./glyph-annotation-eval-slicing.md`](./glyph-annotation-eval-slicing.md).
 **Cross-repo deps:**
 
-- [`pd-book-tools`](../../../pd-book-tools/) — defines
+- `pdomain-book-tools` — defines
   `GlyphAnnotations` (the model's output schema target).
-- [`pd-ocr-synth`](../../../pd-ocr-synth/) — primary training-data
+- `pd-ocr-synth` — primary training-data
   source; annotations are gold by construction.
 - `pd-ocr-labeler` — secondary training-data source (human-labeled)
   AND the inference consumer (model pre-fills annotation suggestions
@@ -84,7 +95,7 @@ otherwise the model learns synth fonts' idea of a ct ligature, not the
 real-book distribution.
 
 Training datasets follow the HF dataset convention from
-[`../ROADMAP.md`](../ROADMAP.md), with a new `pd-ocr-shape`:
+[`roadmap.md`](../plans/roadmap.md), with a new `pd-ocr-shape`:
 `glyph-classification/v1`. Per-row schema:
 
 - `image` (the word crop, PNG bytes)
@@ -128,7 +139,7 @@ distribution drift means synth metrics overstate real-world accuracy.
 ## Export format
 
 Match the existing DocTR model export shape from
-[`../ROADMAP.md#model-metadata-sidecar`](../ROADMAP.md). One model
+[`roadmap.md#model-metadata-sidecar`](../plans/roadmap.md#model-metadata-sidecar). One model
 artifact + one JSON sidecar:
 
 ```json
@@ -177,7 +188,7 @@ point — until then, match.
   scope; those are TBD second-pass work.
 - Replacing the human in the loop. Auto-fill ≠ skip review.
 - Predicting non-binary features (e.g. typeface enum) — that's the
-  separate typeface classifier in [`../ROADMAP.md`](../ROADMAP.md).
+  separate typeface classifier in [`roadmap.md`](../plans/roadmap.md).
 
 ## Open questions
 
@@ -192,3 +203,11 @@ point — until then, match.
 - `T_auto` precision target — is 0.99 right, or stricter (0.999)?
   Depends on labeler UX cost of a wrong auto-fill vs the cost of
   showing nothing.
+
+## Adversarial Review
+
+Stage: migration-time design review. Source: a read-only analyzer and direct comparison with dataset tasks, model training/export code, tests, companion designs, and history.
+
+The review retained the separate classifier, calibration, held-out-human evaluation, class-imbalance handling, and sidecar thresholds as useful active intent. It corrected moved links and the renamed upstream package reference.
+
+No glyph-classification loader, trainer, export path, model, or test has shipped; current dataset tasks remain detection and recognition only. Residual risks include the empty `long_s_positions` presence contract, upstream annotation compatibility, calibration data quality, and threshold ownership.

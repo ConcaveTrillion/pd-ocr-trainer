@@ -1,9 +1,17 @@
+---
+Status: active
+Owner: CT
+Created: 2026-05-28
+Last verified: 2026-07-14
+Kind: guidance
+---
+
 # CLAUDE — pd-ocr-trainer
 
 DocTR OCR model training pipeline (detection, recognition, typeface
 classification) for PGDP data, driven by a NiceGUI training UI. HF dataset
 publishing, model export, and metadata sidecars live here — not in the labeler.
-Architecture: `docs/plans/roadmap.md` (approved plan) + `docs/architecture/datasets.md` (dataset spec).
+Target design: `docs/plans/roadmap.md` (approved plan) + `docs/specs/datasets.md` (dataset spec).
 
 ## Commands
 
@@ -23,8 +31,8 @@ Architecture: `docs/plans/roadmap.md` (approved plan) + `docs/architecture/datas
 | `make export-models AI=1` | copy trained artifacts to workspace exports dir |
 | `make clean` / `make reset` | remove caches / rebuild venv |
 | `make release-patch/minor/major` | bump version, commit, tag |
-| `make local-setup` | clone `../pd-book-tools` + install editable |
-| `make dev-local` | install `../pd-book-tools` editable in venv |
+| `make local-setup` | clone `../pdomain-book-tools` + install editable |
+| `make dev-local` | install `../pdomain-book-tools` editable in venv |
 | `make run-local` | run UI against local editable workspace |
 
 `AI=1` captures verbose output to `.ci-ai.log`; stdout shows `✅` on pass or
@@ -46,14 +54,14 @@ output for debugging.
 - Every trained model writes a JSON sidecar (`name`, `task`, `language`, `typeface`, `trained_on`, `doctr_arch`, `trainer_version`, `trained_at`).
 - Model artifacts exported here are consumed by `pd-ocr-cli`; never rename exports without coordinating downstream.
 - Git LFS required for `.pt`/`.bin` model files — a suspiciously small model file is an LFS pointer, not a real model.
-- `make dev-local` installs an editable `pd-book-tools`; `make upgrade-deps` in that state reverts it — use `make upgrade-deps-local` when that target exists (milestone t1).
+- `make dev-local` installs an editable `pdomain-book-tools`; `make upgrade-deps` in that state reverts it — use `make upgrade-deps-local` when that target exists (milestone t1).
 - Do not kick off long training runs as part of tests; training is operator-driven.
 - `model-trainer.ipynb.old` is not the current entry point — use `make run`.
 
 ## Key docs
 
 - `docs/plans/roadmap.md` — HF datasets integration plan (approved, not yet implemented); milestones a/a.5/b/c/d, glyph milestones g1/g2, tooling t1/t2.
-- `docs/architecture/datasets.md` — dataset shape + card-data spec (parquet/imagefolder, auth, caching).
+- `docs/specs/datasets.md` — dataset shape + card-data target spec (parquet/imagefolder, auth, caching).
 - `docs/specs/` — per-milestone detail specs (glyph-annotation-eval-slicing, glyph-feature-classifier, dev-local-upgrade-flow, local-mode-port-autoselect).
 
 ## Layout
@@ -65,7 +73,7 @@ output for debugging.
 
 ## Sibling repos
 
-- `../pd-book-tools/` — upstream; pinned in `pyproject.toml`; editable via `make dev-local`.
+- `../pdomain-book-tools/` — upstream; pinned in `pyproject.toml`; editable via `make dev-local`.
 - `../pd-ocr-labeler/` — labels ground truth; trainer consumes labeled exports; labeler must declare `language` + `typeface` on exports (cross-repo work).
 - `../pd-ocr-synth/` — synthetic training data (upstream); stamps `language` + `typeface` from recipes.
 - `../pd-ocr-cli/` — consumes exported model artifacts; model-rename in milestone d is a breaking change there.

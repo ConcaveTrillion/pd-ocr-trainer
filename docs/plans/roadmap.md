@@ -1,9 +1,36 @@
+---
+Status: active
+Owner: CT
+Created: 2026-05-11
+Last verified: 2026-07-14
+Kind: plan
+Supersedes: N/A
+Promotes to: N/A
+Disposition: Approved roadmap; major milestones remain unimplemented.
+---
+
 # pd-ocr-trainer roadmap — Hugging Face datasets integration
 
 **Status:** approved plan, not yet implemented.
-**Companion spec:** [`./DATASETS.md`](./DATASETS.md) — dataset shape and
+**Companion spec:** [`../specs/datasets.md`](../specs/datasets.md) — dataset shape and
 format spec (parquet/imagefolder layouts, card-data keys, auth, caching).
-This file is the *plan*; `DATASETS.md` is the *spec*.
+This file is the *plan*; `docs/specs/datasets.md` is the *spec*.
+
+## Goal
+
+Move the repository from local-only OCR datasets toward versioned Hugging Face datasets while preserving the current training workflow during the transition. The milestones also cover typeface and glyph classifiers, model metadata, and two local-development safeguards.
+
+## Architecture
+
+The target separates dataset contracts from their producers and consumers. `pd-ocr-trainer` loads local or Hub-backed sources, trains task-specific models, and exports model metadata; sibling repositories remain responsible for producing their own source data. This is planned architecture, not current behavior.
+
+## Tech Stack
+
+The plan builds on Python, DocTR, Hugging Face Datasets and Hub storage, NiceGUI, Parquet or ImageFolder datasets, and the existing `uv` and Make workflows.
+
+## Global Constraints
+
+Dataset names, language and typeface metadata, single-typeface publishing, classifier-only italic/small-caps handling, model sidecars, Git LFS artifacts, and downstream export compatibility must remain consistent across milestones. Training remains operator-driven; tests must not launch long training jobs.
 
 ## Headline decisions
 
@@ -46,8 +73,8 @@ Examples:
 - `ntw8532/pd-ocr-real-en-typeface` (typeface-classifier dataset)
 
 For dataset-shape and card-data details that go inside each repo, see
-[`./DATASETS.md#dataset-shapes`](./DATASETS.md#dataset-shapes) and
-[`./DATASETS.md#card-data-block`](./DATASETS.md#card-data-block).
+[`../specs/datasets.md#dataset-shapes`](../specs/datasets.md#dataset-shapes) and
+[`../specs/datasets.md#card-data-block`](../specs/datasets.md#card-data-block).
 
 ## Typeface enum
 
@@ -92,7 +119,7 @@ live in classifier-dataset space.
   profile config grows an optional `sources:` list.
 - Set `HF_HOME` to the existing `global-shared-ai-cache` Docker
   volume (see
-  [`./DATASETS.md#caching`](./DATASETS.md#caching)).
+  [`../specs/datasets.md#caching`](../specs/datasets.md#caching)).
 - Trainer UI shows configured sources read-only.
 - **Ship criterion:** a profile with a single `hf:` source trains
   end-to-end against a hand-uploaded test dataset.
@@ -119,7 +146,7 @@ live in classifier-dataset space.
 - Emits imagefolder + `metadata.jsonl` for recognition, parquet for
   detection, imagefolder + `metadata.jsonl` (with a `typeface`
   column) for typeface-classification (see
-  [`./DATASETS.md#dataset-shapes`](./DATASETS.md#dataset-shapes)).
+  [`../specs/datasets.md#dataset-shapes`](../specs/datasets.md#dataset-shapes)).
 - Generates a `README.md` with YAML front matter (license, language,
   tags, `pd_ocr_*` keys).
 - Idempotent: skips when the local snapshot hash matches the remote
@@ -135,12 +162,12 @@ live in classifier-dataset space.
 - Interactive script: prompts the operator for `(language, typeface)`
   per project.
 - **Prefer `matched-ocr/` as the source** — it carries the richer
-  pd-book-tools page document, not the already-derived `labels.json`.
+  pdomain-book-tools page document, not the already-derived `labels.json`.
 - The labeler's per-word style flags are also backfilled, into a
   real-en-typeface (and per-language) classifier dataset. Same
   backfill pass, one additional output dataset shape.
 - Private-by-default; promote to public after license review (see
-  [`./DATASETS.md#authentication`](./DATASETS.md#authentication)).
+  [`../specs/datasets.md#authentication`](../specs/datasets.md#authentication)).
 - **Ship criterion:** every existing on-disk corpus is reproducible
   from an HF repo with documented `(language, typeface)`, including
   a classifier dataset derived from labeler style flags.
@@ -159,7 +186,7 @@ live in classifier-dataset space.
 Workspace-wide feature: each OCR word may carry an optional
 `glyph_annotations` sidecar (ct/st ligatures, long-s positions, swash
 caps, …). GT text remains canonical; annotations live in parallel.
-The data model is owned by `pd-book-tools`; training data is produced
+The data model is owned by `pdomain-book-tools`; training data is produced
 by `pd-ocr-synth` (gold) and the labeler (human).
 
 The trainer has two distinct, **independently shippable** jobs.
@@ -174,11 +201,11 @@ The trainer has two distinct, **independently shippable** jobs.
   metrics; never silently counted as feature-absent.
 - Output: per-feature breakdown table in the trainer UI + JSON
   sidecar consumable by CI for regression alerts.
-- Spec: [`./specs/glyph-annotation-eval-slicing.md`](./specs/glyph-annotation-eval-slicing.md).
+- Spec: [`../specs/glyph-annotation-eval-slicing.md`](../specs/glyph-annotation-eval-slicing.md).
 - **Ship criterion:** running eval against an annotated
   `ml-validation/all/recognition/` set produces overall CER/WER plus a
   per-feature table; features with N(pos) < 30 flagged "low support."
-- **Dependency:** `pd-book-tools` `GlyphAnnotations` data model
+- **Dependency:** `pdomain-book-tools` `GlyphAnnotations` data model
   landed; at least one eval dataset annotated.
 - **Not blocked by (g2).**
 
@@ -201,11 +228,11 @@ The trainer has two distinct, **independently shippable** jobs.
 - Eval gated on the **human-labeled held-out set**, not synth.
 - Inference consumer: the labeler pre-fills annotation suggestions
   humans accept/reject — closes the loop.
-- Spec: [`./specs/glyph-feature-classifier.md`](./specs/glyph-feature-classifier.md).
+- Spec: [`../specs/glyph-feature-classifier.md`](../specs/glyph-feature-classifier.md).
 - **Ship criterion:** classifier exports against a synth + small
   human dataset, labeler loads the sidecar and pre-fills annotations
   on a sample page.
-- **Dependencies:** `pd-book-tools` `GlyphAnnotations` model;
+- **Dependencies:** `pdomain-book-tools` `GlyphAnnotations` model;
   `pd-ocr-synth` emits `glyph-classification/v1` datasets;
   human-labeled glyph-annotation pipeline in `pd-ocr-labeler`.
 
@@ -214,18 +241,18 @@ The trainer has two distinct, **independently shippable** jobs.
 ### (t1) dev-local-aware `upgrade-deps` — *workspace-wide hazard*
 
 - `make upgrade-deps` ends with `uv sync --group all-dev`, which
-  silently reverts a dev-local venv (editable `pd-book-tools`,
+  silently reverts a dev-local venv (editable `pdomain-book-tools`,
   editable sibling `doctr`, and operator-installed CUDA torch wheels)
   back to canonical published / CPU-default builds. Especially
   painful here because trainer is the most GPU-sensitive repo in the
   workspace.
-- Detect dev-local via `uv pip show pd-book-tools` (Editable project
+- Detect dev-local via `uv pip show pdomain-book-tools` (Editable project
   location), `.venv/.pd-dev-local` marker, or `PD_DEV_LOCAL=1`.
 - Default `upgrade-deps` refuses-with-message in dev-local mode;
   sibling `upgrade-deps-local` recipe does
   `uv lock --upgrade` + `uv sync` + dev-local restore (editable peers
   **and** CUDA torch/torchvision/torchaudio wheels).
-- Spec: [`./specs/dev-local-upgrade-flow.md`](./specs/dev-local-upgrade-flow.md).
+- Spec: [`../specs/dev-local-upgrade-flow.md`](../specs/dev-local-upgrade-flow.md).
 - **Ship criterion:** `make upgrade-deps` in a dev-local venv leaves
   the venv untouched and prints the redirect; `make upgrade-deps-local`
   upgrades the lock and ends with a passing `check-local-editable` plus
@@ -247,7 +274,7 @@ The trainer has two distinct, **independently shippable** jobs.
   bookmarks survive across restarts.
 - Surface the bound URL in the running UI itself (footer / header /
   About / copy widget) in addition to the stdout banner.
-- Spec: [`./specs/local-mode-port-autoselect.md`](./specs/local-mode-port-autoselect.md).
+- Spec: [`../specs/local-mode-port-autoselect.md`](../specs/local-mode-port-autoselect.md).
 - **Workspace-wide convergence.** Sibling items in
   `pd-prep-for-pgdp` (commit `b23b913`), `pd-ocr-labeler-spa`
   (commit `b956275`), and `pd-ocr-labeler` (sibling item being added
@@ -266,7 +293,7 @@ The trainer has two distinct, **independently shippable** jobs.
   sanity-check warning if per-word flags disagree.
   Additionally: **the labeler's per-word style flags are the
   canonical source of training data for the typeface classifier.**
-  The `publish` subcommand should be able to emit a classifier
+  The labeler export should provide enough metadata for the trainer to emit a classifier
   dataset (`typeface-classification/v1`) in addition to recognition
   crops. Open question on the labeler side: same export pass produces
   both shapes, or two separate passes?
@@ -274,10 +301,10 @@ The trainer has two distinct, **independently shippable** jobs.
   `pd-<profile>-<task>-…` → `pd-<lang>-<typeface>-<task>-…` is a
   breaking change. Either keep the old prefix as an alias for one
   release, or do a coordinated point release.
-- **`pd-ocr-synth`** — the synth `publish` subcommand stamps
-  `language` + `typeface` from the recipe (recipes already encode
-  font and language by identity).
-- **`pd-book-tools` (glyph milestones)** — owns the
+- **`pd-ocr-synth`** — synth exports provide `language` + `typeface`
+  from the recipe so the trainer can package them (recipes already
+  encode font and language by identity).
+- **`pdomain-book-tools` (glyph milestones)** — owns the
   `GlyphAnnotations` data model. (g1) and (g2) both block on it
   landing.
 - **`pd-ocr-synth` (glyph milestones)** — emits gold
@@ -353,7 +380,7 @@ literal string, since the model spans all enum values):
 ```
 
 See also
-[`./DATASETS.md#model-metadata-sidecar`](./DATASETS.md#model-metadata-sidecar).
+[`../specs/datasets.md#model-metadata-sidecar`](../specs/datasets.md#model-metadata-sidecar).
 
 ## Future possibility — Modal for trainer GPU compute (separate path)
 

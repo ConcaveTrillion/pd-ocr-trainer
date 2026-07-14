@@ -1,3 +1,11 @@
+---
+Status: active
+Owner: CT
+Created: 2026-05-19
+Last verified: 2026-07-14
+Kind: usage
+---
+
 # docs/
 
 How documentation is organized in this repo.
@@ -20,3 +28,10 @@ Empty folders are intentional and tracked via `.gitkeep`.
 Active docs map to GitHub issues — see this repo's issue tracker for status.
 This layout is workspace-standard; see
 `/workspaces/ocr-container/docs/README.md` for the master.
+
+## Current entry points
+
+- [`architecture/training-pipeline.md`](architecture/training-pipeline.md) describes shipped local behavior.
+- [`plans/roadmap.md`](plans/roadmap.md) and [`specs/datasets.md`](specs/datasets.md) describe the approved Hugging Face direction.
+- [`context/current-state.md`](context/current-state.md), [`context/intent-map.md`](context/intent-map.md), and [`context/decisions.md`](context/decisions.md) provide authored operational context.
+- [`process/writing-style.md`](process/writing-style.md) defines the repository writing standard.

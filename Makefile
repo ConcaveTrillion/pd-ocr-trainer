@@ -23,20 +23,20 @@ else
 # Peer-repo discovery for *-local targets
 # ---------------------------------------------------------------------------
 # `make *-local` workflows install / run pd-ocr-trainer against a sibling
-# pd-book-tools checkout instead of the pinned tag in pyproject.toml.
+# pdomain-book-tools checkout instead of the pinned commit in pyproject.toml.
 # PEER_BOOK_TOOLS is the absolute path if the sibling exists, or empty
 # otherwise. The require-peer guard (used inside each *-local recipe) prints
 # a clear message and exits 1 when the sibling is missing — no surprise
 # failures from raw uv errors. `make local-setup` clones the sibling if
 # missing.
-PEER_BOOK_TOOLS_PATH := ../pd-book-tools
-PEER_BOOK_TOOLS_REPO := https://github.com/ConcaveTrillion/pd-book-tools.git
+PEER_BOOK_TOOLS_PATH := ../pdomain-book-tools
+PEER_BOOK_TOOLS_REPO := https://github.com/ConcaveTrillion/pdomain-book-tools.git
 PEER_BOOK_TOOLS := $(realpath $(PEER_BOOK_TOOLS_PATH))
 
 define _require_peer_book_tools
 	@if [ -z "$(PEER_BOOK_TOOLS)" ]; then \
 		echo "❌ Peer repo not found at $(PEER_BOOK_TOOLS_PATH)."; \
-		echo "   This *-local target requires pd-book-tools as a sibling checkout."; \
+		echo "   This *-local target requires pdomain-book-tools as a sibling checkout."; \
 		echo "   Run: make local-setup"; \
 		echo "   (or clone manually: git clone $(PEER_BOOK_TOOLS_REPO) $(PEER_BOOK_TOOLS_PATH))"; \
 		exit 1; \
@@ -203,42 +203,42 @@ _do-release:
 	@BUMP=$(or $(BUMP),minor) ./scripts/do-release.sh
 
 # ---------------------------------------------------------------------------
-# Local editable workflow (requires ../pd-book-tools sibling checkout)
+# Local editable workflow (requires ../pdomain-book-tools sibling checkout)
 # ---------------------------------------------------------------------------
 # Each target self-checks for the peer repo and exits cleanly if absent.
 # UV_NO_SYNC=1 on *-run* targets prevents `uv run` from re-resolving the lock
 # (which would silently overwrite the editable install with the pinned tag).
 
-local-setup: ## [local-dev] Clone ../pd-book-tools if missing and set up the editable workspace
+local-setup: ## [local-dev] Clone ../pdomain-book-tools if missing and set up the editable workspace
 	@if [ -d "$(PEER_BOOK_TOOLS_PATH)" ]; then \
 		echo "✅ Peer repo already at $(PEER_BOOK_TOOLS_PATH) — skipping clone."; \
 	else \
-		echo "📥 Cloning pd-book-tools from $(PEER_BOOK_TOOLS_REPO)..."; \
+		echo "📥 Cloning pdomain-book-tools from $(PEER_BOOK_TOOLS_REPO)..."; \
 		git clone "$(PEER_BOOK_TOOLS_REPO)" "$(PEER_BOOK_TOOLS_PATH)"; \
 	fi
 	@$(MAKE) --no-print-directory dev-local
 	@echo ""
-	@echo "💡 Optional: to also set up pd-book-tools' own venv (for running its tests):"
+	@echo "💡 Optional: to also set up pdomain-book-tools' own venv (for running its tests):"
 	@echo "      (cd $(PEER_BOOK_TOOLS_PATH) && make setup)"
 
-dev-local: ## [local-dev] Install pd-book-tools from ../pd-book-tools as editable in the venv
+dev-local: ## [local-dev] Install pdomain-book-tools from ../pdomain-book-tools as editable in the venv
 	$(call _require_peer_book_tools)
 	UV_LINK_MODE=copy uv sync --group all-dev
 	UV_LINK_MODE=copy uv pip install -e "$(PEER_BOOK_TOOLS)"
 	@$(MAKE) --no-print-directory check-local-editable
-	@echo "✅ Local editable pd-book-tools is active in the venv."
+	@echo "✅ Local editable pdomain-book-tools is active in the venv."
 
-check-local-editable: ## [local-dev] Verify pd-book-tools resolves to ../pd-book-tools (not the pinned tag)
+check-local-editable: ## [local-dev] Verify pdomain-book-tools resolves to ../pdomain-book-tools (not the pinned commit)
 	$(call _require_peer_book_tools)
-	@env -u VIRTUAL_ENV UV_NO_SYNC=1 uv run python -c "import inspect, os, sys, importlib.metadata as md, pd_book_tools; \
-module_file = os.path.realpath(inspect.getfile(pd_book_tools)); \
+	@env -u VIRTUAL_ENV UV_NO_SYNC=1 uv run python -c "import inspect, os, sys, importlib.metadata as md, pdomain_book_tools; \
+module_file = os.path.realpath(inspect.getfile(pdomain_book_tools)); \
 peer = os.path.realpath('$(PEER_BOOK_TOOLS)'); \
 is_local = module_file.startswith(peer + os.sep) or module_file == peer; \
 print('module_file=', module_file); \
 print('expected_peer=', peer); \
-print('dist_version=', md.version('pd-book-tools')); \
-sys.exit(0 if is_local else 1)" || (echo "❌ pd-book-tools is not local/editable. Run: make dev-local" >&2; exit 1)
-	@echo "✅ pd-book-tools resolves to local editable copy."
+print('dist_version=', md.version('pdomain-book-tools')); \
+sys.exit(0 if is_local else 1)" || (echo "❌ pdomain-book-tools is not local/editable. Run: make dev-local" >&2; exit 1)
+	@echo "✅ pdomain-book-tools resolves to local editable copy."
 
 run-local: check-local-editable ## [local-dev] Run the trainer UI against the local editable workspace; pass ARGS="..."
 	env -u VIRTUAL_ENV UV_NO_SYNC=1 uv run pd-ocr-trainer-ui $(ARGS)
