@@ -2,7 +2,13 @@ repos:
 -   repo: https://gitlab.com/vojko.pribudic.foss/pre-commit-update
     rev: v0.9.0
     hooks:
+    # Manual stage only. This hook rewrites the pinned `rev:` values in this
+    # file and then fails the run because it modified a file, so every
+    # `git commit` and CI run fails whenever a hook upstream publishes a
+    # release. Bumping pins is a maintenance action, not a gate. Run it with
+    # `make update-hooks`.
     -   id: pre-commit-update
+        stages: [manual]
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:

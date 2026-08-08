@@ -13,7 +13,7 @@ $(_goals):
 else
 
 .PHONY: install setup reset remove-venv reset-full upgrade-deps test lint \
-	py-lint py-lint-fix lint-fix format pre-commit-check ci ci-slow build clean \
+	py-lint py-lint-fix lint-fix format pre-commit-check update-hooks ci ci-slow build clean \
 	clean-logs clean-cache run run-verbose export-models \
 	release-patch release-minor release-major _do-release help \
 	local-setup dev-local check-local-editable run-local run-local-verbose \
@@ -84,6 +84,7 @@ upgrade-deps: ## Upgrade dependencies and sync local environment
 	uv lock --upgrade
 	@echo "📦 Syncing upgraded dependencies..."
 	uv sync --group all-dev
+	@$(MAKE) --no-print-directory update-hooks
 	@echo "✅ Dependencies upgraded and environment synced!"
 
 test: ## Run tests with parallelization
@@ -137,6 +138,13 @@ format: ## Format code
 pre-commit-check: ## Run pre-commit on all files
 	@echo "🪝 Running pre-commit on all files..."
 	uv run pre-commit run --all-files
+
+update-hooks: ## Bump pinned pre-commit hook revisions in .pre-commit-config.yaml
+	@echo "⬆️  Updating pinned pre-commit hook revisions..."
+	@# The hook exits non-zero when it rewrites the config, which is the success
+	@# case here, so its status is not the target's status.
+	-@uv run pre-commit run pre-commit-update --all-files --hook-stage manual
+	@echo "✅ Hook revisions updated — review the .pre-commit-config.yaml diff."
 
 ci: ## Run complete CI pipeline (setup, pre-commit, test, build)
 	@echo "🚀 Running complete CI pipeline..."
